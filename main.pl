@@ -6,12 +6,24 @@
 :- dynamic(position/2).    % position predicate
 :- dynamic(player/1).      % player predicate
 :- dynamic(play/1).        % is playing predicate
-:- dynamic(time/1).
+:- dynamic(waktu/1).
+:- dynamic(posEnemy/1).
+:- dynamic(posMedicine/1).
+:- dynamic(posWeapon/1).
+:- dynamic(posArmor/1).
+:- dynamic(posAmmo/1).
 
-inventory(none).            % set inventory to no item
+% set inventory to no item
+inventory(none).
 
-time(0).
+waktu(0).
 
+posEnemy([2,3]).
+posMedicine([3,3]).
+posWeapon([4,3]).
+posArmor([2,4]).
+posAmmo([4,4]).
+player([3,4]).
 % default health is 100
 health(100).
 
@@ -22,8 +34,9 @@ armor(20).
 currweapon(none).
 
 % weapon variations
-weapon(ak47).
-weapon(pistol).
+weapon(sumpitan).
+weapon('voodoo equipment').
+weapon('cursing equipment').
 
 % set locations area
 location(1, 1, 6, 6, 'pochinki').
@@ -47,44 +60,14 @@ start :-
     % erase play from false to true
     retract(play(false)),
     asserta(play(true)),
-    write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
-    write('8888       /~~~8e   888-~88e  _d88__   e88~~8e   _d88__           d8b      888-~\\  _d88__        d888   \\   _888__  _888__   888    "    888-~88e    e88~~8e  '), nl,
-    write('`Y88b          88b  888  888   888    d888  88b   888            /Y88b     888      888         88888    |   888     888     888   888   888  888   d888  88b '), nl,
-    write(' `Y88b,   e88~-888  888  888   888    8888__888   888           /  Y88b    888      888         88888    |   888     888     888   888   888  888   8888__888 '), nl,
-    write('   8888  C888  888  888  888   888    Y888    ,   888          /____Y88b   888      888          Y888   /    888     888     888   888   888  888   Y888    , '), nl,
-    write('\\__88P''   "88_-888  888  888   "88_/   "88___/    "88_/       /      Y88b  888      "88_/         `88_-~     888     888     888   888   888  888    "88___/  '), nl, nl,
-    write('Welcome to the battlefield!'), nl,
-    write('You have been chosen as one of the lucky contestants. Be the last man standing and you will be remembered as one of the victors.'), nl, nl,
-    write('Available commands:'), nl,
-    write('   start. -- start the game!'), nl,
-    write('   help. -- show available commands'), nl,
-    write('   quit. -- quit the game'), nl,
-    write('   look. -- look around you'), nl,
-    write('   n. s. e. w. -- move'), nl,
-    write('   map. -- look at the map and your position'), nl,
-    write('   take(Object). -- pick up an object'), nl,
-    write('   drop(Object). -- drop an object'), nl,
-    write('   use(Object). -- use an object'), nl,
-    write('   attack. -- attack enemy that crosses your path'), nl,
-    write('   status. -- show your status'), nl,
-    write('   save(Filename). -- save your game'), nl,
-    write('   load(Filename). -- load previously saved game'), nl, nl,
-    write('Legends:'), nl,
-    write('   W = weapon'), nl,
-    write('   A = armor'), nl,
-    write('   M = medicine'), nl,
-    write('   O = ammo'), nl,
-    write('   P = player'), nl,
-    write('   E = enemy'), nl,
-    write('   - = accessible'), nl,
-    write('   X = inaccessible'), nl,
-    asserta(play(true)).
+    printHeader,printHelp.
 
 % if quit, make play to false and retract player position
 quit :- retract(play(true)), asserta(play(false)), retractall(player(_)).
 
+% Map (Final)
 % map :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-map :- time(X), Block is X//3, printMap(0,0,Block+1).
+map :- waktu(X), Block is X//3, printMap(0,0,Block+1).
 
 
 printMap(X,Y,DeadZone) :- player([X,Y]) , write('P'), write(' '), Xa is X+1, printMap(Xa,Y,DeadZone),!.
@@ -95,15 +78,22 @@ printMap(X,Y,DeadZone) :-
     write(' '),
     Xa is X+1, printMap(Xa,Y,DeadZone).
 
-% move player position
+% move player position (Final)
 n :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-n :- player([X|Y]), Xn is X + 1, retractall(player(_)), asserta(player([Xn|Y])), areaAround.
+n :- player([X, Y]), Yn is Y - 1, isDeadZone(X,Yn), write('You can't move into deadzone!'),!.
+n :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, !.
+
 s :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-s :- player([X|Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn|Y])), areaAround.
+s :- player([X, Y]), Yn is Y + 1, isDeadZone(X,Yn), write('You can't move into deadzone!'),!.
+s :- player([X, Y]), Yn is Y + 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, !.
+
 e :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-e :- player([X, Y]), Yn is Y + 1, retractall(player(_)), asserta(player([X, Yn])), areaAround.
+e :- player([X, Y]), Xn is X + 1, isDeadZone(Xn,Y), write('You can't move into deadzone!'),!.
+e :- player([X, Y]), Xn is X + 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, !.
+
 w :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-w :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), areaAround.
+e :- player([X, Y]), Xn is X - 1, isDeadZone(Xn,Y), write("You can't move into deadzone!"),!.
+w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, !.
 
 % Dipanggil pada saat ada perintah move
 areaAround :-
@@ -139,9 +129,49 @@ status :-
     inventory(A), !, write('Inventory : '), write(A), write(' '),
     forall((inventory(B), B \== A, B \== none), (write(A), write(' '))), nl.
 
-% help
+% help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-help :-
+help :- printHelp.
+    
+% look
+look :-
+    player([X, Y]),
+    (location(Xmin, Ymin, Xmax, Ymax, LocationName),
+    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))),
+    forall(position(A, [X, Y]), (((weapon(A)), write('You see an empty '); write('You see a ')), write(A), write('lying on the grass. '))), nl,
+    printPrio(X - 1, Y - 1), write(' '), printPrio(X, Y - 1), write(' '), printPrio(X + 1, Y - 1), nl,
+    printPrio(X - 1, Y), write(' '), printPrio(X, Y), write(' '), printPrio(X + 1, Y), nl,
+    printPrio(X - 1, Y + 1), write(' '), printPrio(X, Y + 1), write(' '), printPrio(X + 1, Y + 1), nl.
+
+printPrio(X,Y) :- isDeadZone(X,Y), write('X'), !, fail.
+printPrio(X,Y) :- posEnemy([X,Y]), !, write('E'), fail.
+printPrio(X,Y) :- posMedicine([X,Y]), !, write('M'), fail.
+printPrio(X,Y) :- posWeapon([X,Y]), !, write('M'), fail.
+printPrio(X,Y) :- posArmor([X,Y]), !, write('A'), fail.
+printPrio(X,Y) :- posAmmo([X,Y]), !, write('O'), fail.
+printPrio(X,Y) :- player([X,Y]), !, write('P'), fail.
+
+
+
+% Drop Item
+drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+drop(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
+drop(X) :- \+inventory(X), currweapon(X), !, write('You have to put your weapon in your inventory to drop it.'), fail.
+drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)).
+
+isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Block); Y < Block; Y >= (17-Block))),!.
+
+printHeader :-
+    write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
+    write('8888       /~~~8e   888-~88e  _d88__   e88~~8e   _d88__           d8b      888-~\\  _d88__        d888   \\   _888__  _888__   888    "    888-~88e    e88~~8e  '), nl,
+    write('`Y88b          88b  888  888   888    d888  88b   888            /Y88b     888      888         88888    |   888     888     888   888   888  888   d888  88b '), nl,
+    write(' `Y88b,   e88~-888  888  888   888    8888__888   888           /  Y88b    888      888         88888    |   888     888     888   888   888  888   8888__888 '), nl,
+    write('   8888  C888  888  888  888   888    Y888    ,   888          /____Y88b   888      888          Y888   /    888     888     888   888   888  888   Y888    , '), nl,
+    write('\\__88P''   "88_-888  888  888   "88_/   "88___/    "88_/       /      Y88b  888      "88_/         `88_-~     888     888     888   888   888  888    "88___/  '), nl, nl,
+    write('Welcome to the battlefield!'), nl,
+    write('You have been chosen as one of the lucky contestants. Be the last man standing and you will be remembered as one of the victors.'), nl, nl.
+
+printHelp :-
     write('Available commands:'), nl,
     write('   start. -- start the game!'), nl,
     write('   help. -- show available commands'), nl,
@@ -165,12 +195,3 @@ help :-
     write('   E = enemy'), nl,
     write('   - = accessible'), nl,
     write('   X = inaccessible'), nl.
-    
-% look
-% look :-
-
-% Drop Item
-drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-drop(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
-drop(X) :- \+inventory(X), currweapon(X), !, write('You have to put your weapon in your inventory to drop it.'), fail.
-drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)).
