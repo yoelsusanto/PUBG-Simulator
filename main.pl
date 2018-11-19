@@ -6,8 +6,11 @@
 :- dynamic(position/2).    % position predicate
 :- dynamic(player/1).      % player predicate
 :- dynamic(play/1).        % is playing predicate
+:- dynamic(time/1).
 
-inventory(none).        % set inventory to no item
+inventory(none).            % set inventory to no item
+
+time(0).
 
 % default health is 100
 health(100).
@@ -32,27 +35,6 @@ location(13, 7, 15, 15, 'CC barat').
 
 % set play to default false
 play(false).
-
-mapM(
-    [
-    ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', 'X'],
-    ['X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X']
-    ]).
 
 /* rule */
 start :-
@@ -79,7 +61,7 @@ start :-
     write('   quit. -- quit the game'), nl,
     write('   look. -- look around you'), nl,
     write('   n. s. e. w. -- move'), nl,
-    write('   map. -- look at the map and detect enemies'), nl,
+    write('   map. -- look at the map and your position'), nl,
     write('   take(Object). -- pick up an object'), nl,
     write('   drop(Object). -- drop an object'), nl,
     write('   use(Object). -- use an object'), nl,
@@ -101,8 +83,17 @@ start :-
 % if quit, make play to false and retract player position
 quit :- retract(play(true)), asserta(play(false)), retractall(player(_)).
 
-map :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-map :- mapM(M), printMatrix(M).
+% map :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+map :- time(X), Block is X//3, printMap(0,0,Block+1).
+
+
+printMap(X,Y,DeadZone) :- player([X,Y]) , write('P'), write(' '), Xa is X+1, printMap(Xa,Y,DeadZone),!.
+printMap(X,Y,_) :- X>=17, Y>=16.
+printMap(X,Y,DeadZone) :- X==17, nl, Ya is Y + 1, printMap(0,Ya,DeadZone), !.
+printMap(X,Y,DeadZone) :-
+    ((X < DeadZone; X >= (17-DeadZone); Y < DeadZone; Y >= (17-DeadZone)), write('X'); write('-')), !,
+    write(' '),
+    Xa is X+1, printMap(Xa,Y,DeadZone).
 
 % move player position
 n :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -127,19 +118,6 @@ areaAround :-
     (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write('To the south is '), write(LocationSName), write('. '))),
     (location(XminW, YminW, XmaxW, YmaxW, LocationWName),
     (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.'))), nl.
-
-printMatrix(M) :- printRows(M, 0).
-printRows([], _).
-printRows([H|T], R) :- !,
-    printRow(H, R, 0),
-    Rpp is R + 1,
-    printRows(T, Rpp).
-printRow([], _, _) :- nl.
-printRow([H|T], R, C) :-
-    ((player([X, Y|_]), R == X, C == Y), write('P'); write(H)), !,
-    write(' '),
-    Cpp is C + 1,
-    printRow(T, R, Cpp).
 
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+weapon(X), !, write('Weapon doesnt exist.'), fail.
@@ -170,7 +148,7 @@ help :-
     write('   quit. -- quit the game'), nl,
     write('   look. -- look around you'), nl,
     write('   n. s. e. w. -- move'), nl,
-    write('   map. -- look at the map and detect enemies'), nl,
+    write('   map. -- look at the map and your position'), nl,
     write('   take(Object). -- pick up an object'), nl,
     write('   drop(Object). -- drop an object'), nl,
     write('   use(Object). -- use an object'), nl,
@@ -188,3 +166,11 @@ help :-
     write('   - = accessible'), nl,
     write('   X = inaccessible'), nl.
     
+% look
+% look :-
+
+% Drop Item
+drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+drop(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
+drop(X) :- \+inventory(X), currweapon(X), !, write('You have to put your weapon in your inventory to drop it.'), fail.
+drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)).
