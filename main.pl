@@ -23,7 +23,7 @@ posMedicine([3,3]).
 posWeapon([4,3]).
 posArmor([2,4]).
 posAmmo([4,4]).
-player([3,4]).
+% player([3,4]).
 % default health is 100
 health(100).
 
@@ -53,13 +53,17 @@ play(false).
 start :-
     % randomly place player
     random(1, 16, X), random(1, 16, Y), asserta(player([X, Y])),
+    
     % randomly place weapon
-    forall(
-        (random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]))))
-        ),
+    forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    
+    forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]))))),
+    
     % erase play from false to true
     retract(play(false)),
     asserta(play(true)),
+
+    % print required texts
     printHeader,printHelp.
 
 % if quit, make play to false and retract player position
@@ -80,19 +84,19 @@ printMap(X,Y,DeadZone) :-
 
 % move player position (Final)
 n :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-n :- player([X, Y]), Yn is Y - 1, isDeadZone(X,Yn), write('You can't move into deadzone!'),!.
+n :- player([X, Y]), Yn is Y - 1, isDeadZone(X,Yn), write('You cant move into deadzone!'),!. % apa lagi nih
 n :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, !.
 
 s :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-s :- player([X, Y]), Yn is Y + 1, isDeadZone(X,Yn), write('You can't move into deadzone!'),!.
+s :- player([X, Y]), Yn is Y + 1, isDeadZone(X,Yn), write('You cant move into deadzone!'),!.
 s :- player([X, Y]), Yn is Y + 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, !.
 
 e :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-e :- player([X, Y]), Xn is X + 1, isDeadZone(Xn,Y), write('You can't move into deadzone!'),!.
+e :- player([X, Y]), Xn is X + 1, isDeadZone(Xn,Y), write('You cant move into deadzone!'),!.
 e :- player([X, Y]), Xn is X + 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, !.
 
 w :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-e :- player([X, Y]), Xn is X - 1, isDeadZone(Xn,Y), write("You can't move into deadzone!"),!.
+w :- player([X, Y]), Xn is X - 1, isDeadZone(Xn,Y), write('You cant move into deadzone!'),!.
 w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, !.
 
 % Dipanggil pada saat ada perintah move
@@ -137,20 +141,21 @@ help :- printHelp.
 look :-
     player([X, Y]),
     (location(Xmin, Ymin, Xmax, Ymax, LocationName),
-    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))),
-    forall(position(A, [X, Y]), (((weapon(A)), write('You see an empty '); write('You see a ')), write(A), write('lying on the grass. '))), nl,
-    printPrio(X - 1, Y - 1), write(' '), printPrio(X, Y - 1), write(' '), printPrio(X + 1, Y - 1), nl,
-    printPrio(X - 1, Y), write(' '), printPrio(X, Y), write(' '), printPrio(X + 1, Y), nl,
-    printPrio(X - 1, Y + 1), write(' '), printPrio(X, Y + 1), write(' '), printPrio(X + 1, Y + 1), nl.
+    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))), nl,
+    %forall(position(A, [X, Y]), (((weapon(A)), write('You see an empty '); write('You see a ')), write(A), write('lying on the grass. '))), nl,
+    A is X-1, B is X+1, C is Y-1, D is Y+1,
+    printPrio(A, C), write(' '), printPrio(X, C), write(' '), printPrio(B, C), nl,
+    printPrio(A, Y), write(' '), printPrio(X, Y), write(' '), printPrio(B, Y), nl,
+    printPrio(A, D), write(' '), printPrio(X, D), write(' '), printPrio(B, D), nl.
 
-printPrio(X,Y) :- isDeadZone(X,Y), write('X'), !, fail.
-printPrio(X,Y) :- posEnemy([X,Y]), !, write('E'), fail.
-printPrio(X,Y) :- posMedicine([X,Y]), !, write('M'), fail.
-printPrio(X,Y) :- posWeapon([X,Y]), !, write('M'), fail.
-printPrio(X,Y) :- posArmor([X,Y]), !, write('A'), fail.
-printPrio(X,Y) :- posAmmo([X,Y]), !, write('O'), fail.
-printPrio(X,Y) :- player([X,Y]), !, write('P'), fail.
-
+printPrio(X,Y) :- isDeadZone(X,Y), !, write('X').
+printPrio(X,Y) :- posEnemy([X,Y]), !, write('E').
+printPrio(X,Y) :- posMedicine([X,Y]), !, write('M').
+printPrio(X,Y) :- posWeapon([X,Y]), !, write('M').
+printPrio(X,Y) :- posArmor([X,Y]), !, write('A').
+printPrio(X,Y) :- posAmmo([X,Y]), !, write('O').
+printPrio(X,Y) :- player([X,Y]), !, write('P').
+printPrio(_,_) :- write('-').
 
 
 % Drop Item
