@@ -144,7 +144,7 @@ printRow([H|T], R, C) :-
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+weapon(X), !, write('Weapon doesnt exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(X) :- asserta(inventory(X)).
+take(X) :- asserta(inventory(X)), player(L), retract(position(X, L)).
 
 nearby(X) :- position(X, [A,B|_]), player([P1,P2|_]), A == P1, B == P2.
 
