@@ -68,32 +68,32 @@ start :-
 % if quit, make play to false and retract player position
 quit :- retract(play(true)), assert(play(false)), retractall(player(_)).
 
-map :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
+map :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 map :- mapM(M), printMatrix(M).
 
 % move player position
-n :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
+n :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 n :- player([X|Y]), Xn is X + 1, retractall(player(_)), assert(player([Xn|Y])).
-s :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
+s :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 s :- player([X|Y]), Xn is X - 1, retractall(player(_)), assert(player([Xn|Y])).
-e :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
+e :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 e :- player([X, Y]), Yn is Y + 1, retractall(player(_)), assert(player([X, Yn])).
-w :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
+w :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 w :- player([X, Y]), Yn is Y - 1, retractall(player(_)), assert(player([X, Yn])).
 
 % 
 areaAround :-
     player([X, Y]), N is X + 1, S is X - 1, E is Y + 1, W is Y - 1,
     (location(Xmin, Ymin, Xmax, Ymax, LocationName),
-    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write("You are in "), write(LocationName), write(". "))),
+    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))),
     (location(XminN, YminN, XmaxN, YmaxN, LocationNName),
-    (XminN =< N, N =< XmaxN, YminN =< Y, Y =< YmaxN, !, write("To the north is "), write(LocationNName), write(". "))),
+    (XminN =< N, N =< XmaxN, YminN =< Y, Y =< YmaxN, !, write('To the north is '), write(LocationNName), write('. '))),
     (location(XminE, YminE, XmaxE, YmaxE, LocationEName),
-    (XminE =< X, X =< XmaxE, YminE =< E, E =< YmaxE, !, write("To the east is "), write(LocationEName), write(". "))),
+    (XminE =< X, X =< XmaxE, YminE =< E, E =< YmaxE, !, write('To the east is '), write(LocationEName), write('. '))),
     (location(XminS, YminS, XmaxS, YmaxS, LocationSName),
-    (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write("To the south is "), write(LocationSName), write(". "))),
+    (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write('To the south is '), write(LocationSName), write('. '))),
     (location(XminW, YminW, XmaxW, YmaxW, LocationWName),
-    (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write("To the west is "), write(LocationWName), write("."))), nl.
+    (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.'))), nl.
 
 printMatrix(M) :- printRows(M, 0).
 printRows([], _).
@@ -103,28 +103,28 @@ printRows([H|T], R) :- !,
     printRows(T, Rpp).
 printRow([], _, _) :- nl.
 printRow([H|T], R, C) :-
-    ((player([X, Y|_]), R == X, C == Y), write("P"); write(H)), !,
-    write(" "),
+    ((player([X, Y|_]), R == X, C == Y), write('P'); write(H)), !,
+    write(' '),
     Cpp is C + 1,
     printRow(T, R, Cpp).
 
-take(_) :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
-take(X) :- \+weapon(X), !, writeln("Weapon doesn't exist."), fail.
-take(X) :- \+nearby(X), !, write("There is no "), write(X), writeln(" around here."), fail.
+take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+take(X) :- \+weapon(X), !, write('Weapon doesnt exist.'), fail.
+take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
 take(X) :- asserta(inventory(X)).
 
 nearby(X) :- position(X, [A,B|_]), player([P1,P2|_]), A == P1, B == P2.
 nearby(X) :- position(X, [A,B|_]), player([P1,P2|_]), A == P1, B == P2.
 
-use(_) :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
-use(X) :- \+inventory(X), !, writeln("Item doesn't exist in inventory."), fail.
+use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
 use(X) :- retract(inventory(X)), asserta(currweapon(X)).
 
 % status command
-status :- play(X), X == false, !, writeln("You must start the game using 'start.' first."), fail.
+status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 status :-
-    health(X), !, write("Health : "), writeln(X),
-    armor(Y), !, write("Armor : "),  writeln(Y),
-    currweapon(Z), !, write("Weapon : "), writeln(Z),
-    inventory(A), !, write("Inventory : "), write(A), write(" "),
-    forall((inventory(B), B \== A, B \== none), (write(A), write(" "))), nl.
+    health(X), !, write('Health : '), write(X),
+    armor(Y), !, write('Armor : '),  write(Y),
+    currweapon(Z), !, write('Weapon : '), write(Z),
+    inventory(A), !, write('Inventory : '), write(A), write(' '),
+    forall((inventory(B), B \== A, B \== none), (write(A), write(' '))), nl.
