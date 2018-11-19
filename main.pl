@@ -81,7 +81,7 @@ e :- player([X, Y]), Yn is Y + 1, retractall(player(_)), assert(player([X, Yn]))
 w :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 w :- player([X, Y]), Yn is Y - 1, retractall(player(_)), assert(player([X, Yn])).
 
-% 
+% Dipanggil pada saat ada perintah move
 areaAround :-
     player([X, Y]), N is X + 1, S is X - 1, E is Y + 1, W is Y - 1,
     (location(Xmin, Ymin, Xmax, Ymax, LocationName),
