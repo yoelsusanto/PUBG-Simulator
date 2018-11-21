@@ -7,23 +7,13 @@
 :- dynamic(player/1).      % player predicate
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(waktu/1).
-:- dynamic(posEnemy/1).
-:- dynamic(posMedicine/1).
-:- dynamic(posWeapon/1).
-:- dynamic(posArmor/1).
-:- dynamic(posAmmo/1).
 
 % set inventory to no item
 inventory(none).
 
+% set waktu to zero
 waktu(0).
 
-posEnemy([2,3]).
-posMedicine([3,3]).
-posWeapon([4,3]).
-posArmor([2,4]).
-posAmmo([4,4]).
-% player([3,4]).
 % default health is 100
 health(100).
 
@@ -33,10 +23,26 @@ armor(20).
 % current weapon is none
 currweapon(none).
 
+% ------------- Item Variations -------------------
 % weapon variations
 weapon(sumpitan).
 weapon('voodoo equipment').
 weapon('cursing equipment').
+
+% enemy variations
+enemy(hantu).
+enemy(tubes).
+
+% medicine
+medicine(batu1).
+medicine(batu2).
+
+% armor
+variasiArmor(aluminium).
+variasiArmor(cangkang).
+
+% ammo
+ammo(peluru).
 
 % set locations area
 location(1, 1, 6, 6, 'pochinki').
@@ -57,7 +63,17 @@ start :-
     % randomly place weapon
     forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
-    forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]))))),
+    % randomly place enemy
+    forall((random(2, 5, N), between(1, N, _)), forall(enemy(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+
+    % randomly place medicine
+    forall((random(2, 5, N), between(1, N, _)), forall(medicine(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    
+    % randomly place armor
+    forall((random(2, 5, N), between(1, N, _)), forall(variasiArmor(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    
+    % randomly place ammo
+    forall((random(2, 5, N), between(1, N, _)), forall(ammo(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
     % erase play from false to true
     retract(play(false)),
@@ -70,9 +86,8 @@ start :-
 quit :- retract(play(true)), asserta(play(false)), retractall(player(_)).
 
 % Map (Final)
-% map :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+map :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 map :- waktu(X), Block is X//3, printMap(0,0,Block+1).
-
 
 printMap(X,Y,DeadZone) :- player([X,Y]) , write('P'), write(' '), Xa is X+1, printMap(Xa,Y,DeadZone),!.
 printMap(X,Y,_) :- X>=17, Y>=16.
@@ -85,19 +100,19 @@ printMap(X,Y,DeadZone) :-
 % move player position (Final)
 n :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 n :- player([X, Y]), Yn is Y - 1, isDeadZone(X,Yn), write('You cant move into deadzone!'),!. % apa lagi nih
-n :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, !.
+n :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, updateGame, !.
 
 s :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 s :- player([X, Y]), Yn is Y + 1, isDeadZone(X,Yn), write('You cant move into deadzone!'),!.
-s :- player([X, Y]), Yn is Y + 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, !.
+s :- player([X, Y]), Yn is Y + 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, updateGame, !.
 
 e :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 e :- player([X, Y]), Xn is X + 1, isDeadZone(Xn,Y), write('You cant move into deadzone!'),!.
-e :- player([X, Y]), Xn is X + 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, !.
+e :- player([X, Y]), Xn is X + 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, updateGame, !.
 
 w :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 w :- player([X, Y]), Xn is X - 1, isDeadZone(Xn,Y), write('You cant move into deadzone!'),!.
-w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, !.
+w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, updateGame, !.
 
 % Dipanggil pada saat ada perintah move
 areaAround :-
@@ -116,13 +131,13 @@ areaAround :-
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+weapon(X), !, write('Weapon doesnt exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(X) :- asserta(inventory(X)), player(L), retract(position(X, L)).
+take(X) :- asserta(inventory(X)), player(L), retract(position(X, L)), updateGame.
 
 nearby(X) :- position(X, [A,B|_]), player([P1,P2|_]), A == P1, B == P2.
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
-use(X) :- retract(inventory(X)), asserta(currweapon(X)).
+use(X) :- retract(inventory(X)), asserta(currweapon(X)), updateGame.
 
 % status command
 status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -141,19 +156,19 @@ help :- printHelp.
 look :-
     player([X, Y]),
     (location(Xmin, Ymin, Xmax, Ymax, LocationName),
-    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))), nl,
-    %forall(position(A, [X, Y]), (((weapon(A)), write('You see an empty '); write('You see a ')), write(A), write('lying on the grass. '))), nl,
+    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))),
+    forall(position(A, [X, Y]), (((weapon(A)), write('You see an empty '); write('You see a ')), write(A), write(' lying on the grass. '))), nl,
     A is X-1, B is X+1, C is Y-1, D is Y+1,
     printPrio(A, C), write(' '), printPrio(X, C), write(' '), printPrio(B, C), nl,
     printPrio(A, Y), write(' '), printPrio(X, Y), write(' '), printPrio(B, Y), nl,
     printPrio(A, D), write(' '), printPrio(X, D), write(' '), printPrio(B, D), nl.
 
 printPrio(X,Y) :- isDeadZone(X,Y), !, write('X').
-printPrio(X,Y) :- posEnemy([X,Y]), !, write('E').
-printPrio(X,Y) :- posMedicine([X,Y]), !, write('M').
-printPrio(X,Y) :- posWeapon([X,Y]), !, write('M').
-printPrio(X,Y) :- posArmor([X,Y]), !, write('A').
-printPrio(X,Y) :- posAmmo([X,Y]), !, write('O').
+printPrio(X,Y) :- position(Z, [X,Y]), enemy(Z), !, write('E').
+printPrio(X,Y) :- position(Z, [X,Y]), medicine(Z), !, write('M').
+printPrio(X,Y) :- position(Z, [X,Y]), weapon(Z), !, write('W').
+printPrio(X,Y) :- position(Z, [X,Y]), variasiArmor(Z), !, write('A').
+printPrio(X,Y) :- position(Z, [X,Y]), ammo(Z), !, write('O').
 printPrio(X,Y) :- player([X,Y]), !, write('P').
 printPrio(_,_) :- write('-').
 
@@ -162,9 +177,33 @@ printPrio(_,_) :- write('-').
 drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 drop(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
 drop(X) :- \+inventory(X), currweapon(X), !, write('You have to put your weapon in your inventory to drop it.'), fail.
-drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)).
+drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)), updateGame.
 
+% Check deadzone
 isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Block); Y < Block; Y >= (17-Block))),!.
+
+% Add time
+addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
+
+% Update Game (including add time, )
+updateGame :- addTime.
+
+% periodicDrop :- 
+% move enemy toward player
+moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), player([PosX,PosY]), Dx is PosX-X, Dy is PosY-Y, movePosition(Z,X,Y,Dx,Dy)) ).
+
+movePosition(Z,X,Y,Dx,Dy) :-
+    (((Dx<0, NewX is X-1, append([],[NewX,Y],List)) ; (Dx>0, NewX is X+1, append([],[NewX,Y],List)) ; (Dx==0)),
+    ((Dy<0, NewY is Y-1,append(List,[X,Newy],NList)) ; (Dy>0, NewY is Y+1, append(List,[X,Newy],NList)) ; (Dy==0))),
+    choose(NList)
+    asserta(position(Z,[,])).
+
+choose([], []).
+choose(List, Elt) :-
+        length(List, Length),
+        random(0, Length, Index),
+        nth0(Index, List, Elt).
+
 
 printHeader :-
     write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
