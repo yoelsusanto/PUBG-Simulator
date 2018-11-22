@@ -198,7 +198,6 @@ movePosition(Z,X,Y,N) :-
     ((N==3),(asserta(position(Z,[X,Y+1]))));
     ((N==4),(asserta(position(Z,[X,Y-1])))).
 
-
 printHeader :-
     write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
     write('8888       /~~~8e   888-~88e  _d88__   e88~~8e   _d88__           d8b      888-~\\  _d88__        d888   \\   _888__  _888__   888    "    888-~88e    e88~~8e  '), nl,
