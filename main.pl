@@ -7,7 +7,8 @@
 :- dynamic(player/1).      % player predicate
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(waktu/1).
-
+:- dynamic(lose/1).
+:- dynamic(win/1).
 % set inventory to no item
 inventory(none).
 
@@ -54,6 +55,8 @@ location(13, 7, 15, 15, 'CC barat').
 
 % set play to default false
 play(false).
+win(false).
+lose(false).
 
 /* rule */
 start :-
@@ -78,6 +81,10 @@ start :-
     % erase play from false to true
     retract(play(false)),
     asserta(play(true)),
+
+    % % set game state
+    % asserta(win(false)),
+    % asserta(lose(false)),
 
     % print required texts
     printHeader,printHelp.
@@ -117,16 +124,16 @@ w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])
 % Dipanggil pada saat ada perintah move
 areaAround :-
     player([X, Y]), N is X + 1, S is X - 1, E is Y + 1, W is Y - 1,
-    (location(Xmin, Ymin, Xmax, Ymax, LocationName),
-    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))),
-    (location(XminN, YminN, XmaxN, YmaxN, LocationNName),
-    (XminN =< N, N =< XmaxN, YminN =< Y, Y =< YmaxN, !, write('To the north is '), write(LocationNName), write('. '))),
-    (location(XminE, YminE, XmaxE, YmaxE, LocationEName),
-    (XminE =< X, X =< XmaxE, YminE =< E, E =< YmaxE, !, write('To the east is '), write(LocationEName), write('. '))),
-    (location(XminS, YminS, XmaxS, YmaxS, LocationSName),
-    (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write('To the south is '), write(LocationSName), write('. '))),
-    (location(XminW, YminW, XmaxW, YmaxW, LocationWName),
-    (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.'))), nl.
+    ((location(Xmin, Ymin, Xmax, Ymax, LocationName),
+    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. ')))),
+    ((location(XminN, YminN, XmaxN, YmaxN, LocationNName),
+    (XminN =< N, N =< XmaxN, YminN =< Y, Y =< YmaxN, !, write('To the north is '), write(LocationNName), write('. ')))),
+    ((location(XminE, YminE, XmaxE, YmaxE, LocationEName),
+    (XminE =< X, X =< XmaxE, YminE =< E, E =< YmaxE, !, write('To the east is '), write(LocationEName), write('. ')))),
+    ((location(XminS, YminS, XmaxS, YmaxS, LocationSName),
+    (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write('To the south is '), write(LocationSName), write('. ')))),
+    ((location(XminW, YminW, XmaxW, YmaxW, LocationWName),
+    (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.')))), nl.
 
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+weapon(X), !, write('Weapon doesnt exist.'), fail.
@@ -142,10 +149,10 @@ use(X) :- retract(inventory(X)), asserta(currweapon(X)), updateGame.
 % status command
 status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 status :-
-    health(X), !, write('Health : '), write(X),
-    armor(Y), !, write('Armor : '),  write(Y),
-    currweapon(Z), !, write('Weapon : '), write(Z),
-    inventory(A), !, write('Inventory : '), write(A), write(' '),
+    health(X), !, write('Health : '), write(X), nl,
+    armor(Y), !, write('Armor : '),  write(Y), nl,
+    currweapon(Z), !, write('Weapon : '), write(Z), nl,
+    inventory(A), !, write('Inventory : '), write(A), write(' '), nl,
     forall((inventory(B), B \== A, B \== none), (write(A), write(' '))), nl.
 
 % help (Final)
@@ -186,17 +193,34 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
 
 % Update Game (including add time, )
-updateGame :- addTime, moveEnemy.
+updateGame :- addTime, moveEnemy, cleanObjects, winLose.
 
 % periodicDrop :- 
-% move enemy toward player
-moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N)) ).
 
+% move enemy toward player
+moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N))).
+
+% clean objects untuk benda-benda yang sudah berada di dead zone.
+cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z,[X,Y])))).
+
+
+% randomly move an enemy position.
 movePosition(Z,X,Y,N) :-
-    ((N==1),(asserta(position(Z,[X+1,Y]))));
-    ((N==2),(asserta(position(Z,[X-1,Y]))));
-    ((N==3),(asserta(position(Z,[X,Y+1]))));
-    ((N==4),(asserta(position(Z,[X,Y-1])))).
+    ((N==1), K is X+1, (asserta(position(Z,[K,Y]))));
+    ((N==2), K is X-1, (asserta(position(Z,[K,Y]))));
+    ((N==3), K is Y+1, (asserta(position(Z,[X,K]))));
+    ((N==4), K is Y-1, (asserta(position(Z,[X,K])))).
+
+% check if the player has won or lost
+winLose :-
+    \+ (enemy(X), position(X,[_,_])), retract(win(false)), asserta(win(true)), printWinFalse, retract(play(true)), asserta(play(false)).
+winLose :-
+    player([X,Y]), isDeadZone(X,Y), retract(lose(false)), asserta(lose(true)), printWinFalse, retract(play(true)), asserta(play(false)).
+winLose.
+
+printWinFalse :-
+    (win(true), write('You have won! You are the last man standing!'));
+    (win(false), write('You died! You lose!')).
 
 printHeader :-
     write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
