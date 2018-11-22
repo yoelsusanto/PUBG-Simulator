@@ -186,23 +186,17 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
 
 % Update Game (including add time, )
-updateGame :- addTime.
+updateGame :- addTime, moveEnemy.
 
 % periodicDrop :- 
 % move enemy toward player
-moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), player([PosX,PosY]), Dx is PosX-X, Dy is PosY-Y, movePosition(Z,X,Y,Dx,Dy)) ).
+moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N)) ).
 
-movePosition(Z,X,Y,Dx,Dy) :-
-    (((Dx<0, NewX is X-1, append([],[NewX,Y],List)) ; (Dx>0, NewX is X+1, append([],[NewX,Y],List)) ; (Dx==0)),
-    ((Dy<0, NewY is Y-1,append(List,[X,Newy],NList)) ; (Dy>0, NewY is Y+1, append(List,[X,Newy],NList)) ; (Dy==0))),
-    choose(NList)
-    asserta(position(Z,[,])).
-
-choose([], []).
-choose(List, Elt) :-
-        length(List, Length),
-        random(0, Length, Index),
-        nth0(Index, List, Elt).
+movePosition(Z,X,Y,N) :-
+    ((N==1),(asserta(position(Z,[X+1,Y]))));
+    ((N==2),(asserta(position(Z,[X-1,Y]))));
+    ((N==3),(asserta(position(Z,[X,Y+1]))));
+    ((N==4),(asserta(position(Z,[X,Y-1])))).
 
 
 printHeader :-
