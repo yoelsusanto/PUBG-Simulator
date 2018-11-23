@@ -3,13 +3,11 @@
 :- dynamic(health/1).
 :- dynamic(armor/1).
 :- dynamic(currweapon/1).
-:- dynamic(ammo/1).
 :- dynamic(position/2).    % position predicate
 :- dynamic(player/1).      % player predicate
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(waktu/1).
-:- dynamic(lose/1).
-:- dynamic(win/1).
+
 % set inventory to no item
 inventory(none).
 
@@ -28,8 +26,8 @@ currweapon(none).
 % ------------- Item Variations -------------------
 % weapon variations
 weapon(sumpitan).
-weapon('voodoo equipment').
-weapon('cursing equipment').
+weapon('voodoo_equipment').
+weapon('cursing_equipment').
 
 % enemy variations
 enemy(hantu).
@@ -44,7 +42,7 @@ variasiArmor(aluminium).
 variasiArmor(cangkang).
 
 % ammo
-% ammo(peluru).
+ammo(peluru).
 
 % set locations area
 location(1, 1, 6, 6, 'pochinki').
@@ -56,8 +54,6 @@ location(13, 7, 15, 15, 'CC barat').
 
 % set play to default false
 play(false).
-win(false).
-lose(false).
 
 /* rule */
 start :-
@@ -83,15 +79,8 @@ start :-
     retract(play(false)),
     asserta(play(true)),
 
-    % Make ammo to zero
-    asserta(ammo(0)).
-    % % set game state
-    % asserta(win(false)),
-    % asserta(lose(false)),
-
     % print required texts
     printHeader,printHelp.
-
 
 save(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 save(S) :- inventory(I), health(H), armor(A), currweapon(Cw), position(X, Y), player(P), play(Pl), waktu(W),
@@ -99,21 +88,35 @@ save(S) :- inventory(I), health(H), armor(A), currweapon(Cw), position(X, Y), pl
         write(Str, H), write(Str,'.'), nl(Str),
         write(Str, A), write(Str,'.'), nl(Str),
         write(Str, Cw), write(Str,'.'), nl(Str),
-        write(Str, X), write(Str,'.'), nl(Str),
-        write(Str, Y), write(Str,'.'), nl(Str),
         write(Str, P), write(Str,'.'), nl(Str),
         write(Str, Pl), write(Str,'.'), nl(Str),
         write(Str, W), write(Str,'.'), nl(Str),
+        write(Str, X), write(Str,'.'), nl(Str),
+        write(Str, Y), write(Str,'.'), nl(Str),
+        forall((position(Xl,Yl), Yl \== Y, Yl \== none) , (write(Str, Xl), write(Str, '.'), nl(Str), write(Str, Yl), write(Str, '.'), nl(Str))),
+        write(Str, 'inventory.'), nl(Str),
         write(Str, I), write(Str,'.'), nl(Str),
-        forall((inventory(Ilagi), Ilagi \== I, Ilagi \== none), (write(Stream, Ilagi), write(Stream, '.'), nl(Stream))),
+        forall((inventory(Ilagi), Ilagi \== I, Ilagi \== none), (write(Str, Ilagi), write(Str, '.'), nl(Str))),
         close(Str), !.
 
 loads(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_)), retract(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
+loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_)), retractall(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
         open(L, read, Str),
-        read(Str, H), read(Str, A), read(Str, Cw), read(Str, X), read(Str, Y), read(Str, P), read(Str, Pl), read(Str, W), read_inventory(Str, _),
+        read(Str, H), read(Str, A), read(Str, Cw),  read(Str, P), read(Str, Pl), read(Str, W),read(Str, X), read_position(Str, X), read_inventory(Str, _),
         close(Str),
-        asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw)), asserta(position(X, Y)), asserta(player(P)), asserta(play(Pl)), asserta(waktu(W)), !.        
+        asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw)),  asserta(player(P)),  asserta(waktu(W)), asserta(play(Pl)), !.        
+
+end_of_inventory('inventory').
+
+read_position(_, X) :- end_of_inventory(X), !.
+
+read_position(Stream, X):- 
+    \+end_of_inventory(X),  
+    read(Stream, Y),
+    asserta(position(X, Y)),
+    read(Stream, Z),
+    read_position(Stream, Z).
+    
 
 read_inventory(Stream, _) :- at_end_of_stream(Stream), !. 
     
@@ -158,16 +161,16 @@ w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])
 % Dipanggil pada saat ada perintah move
 areaAround :-
     player([X, Y]), N is X + 1, S is X - 1, E is Y + 1, W is Y - 1,
-    ((location(Xmin, Ymin, Xmax, Ymax, LocationName),
-    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. ')))),
-    ((location(XminN, YminN, XmaxN, YmaxN, LocationNName),
-    (XminN =< N, N =< XmaxN, YminN =< Y, Y =< YmaxN, !, write('To the north is '), write(LocationNName), write('. ')))),
-    ((location(XminE, YminE, XmaxE, YmaxE, LocationEName),
-    (XminE =< X, X =< XmaxE, YminE =< E, E =< YmaxE, !, write('To the east is '), write(LocationEName), write('. ')))),
-    ((location(XminS, YminS, XmaxS, YmaxS, LocationSName),
-    (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write('To the south is '), write(LocationSName), write('. ')))),
-    ((location(XminW, YminW, XmaxW, YmaxW, LocationWName),
-    (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.')))), nl.
+    (location(Xmin, Ymin, Xmax, Ymax, LocationName),
+    (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))),
+    (location(XminN, YminN, XmaxN, YmaxN, LocationNName),
+    (XminN =< N, N =< XmaxN, YminN =< Y, Y =< YmaxN, !, write('To the north is '), write(LocationNName), write('. '))),
+    (location(XminE, YminE, XmaxE, YmaxE, LocationEName),
+    (XminE =< X, X =< XmaxE, YminE =< E, E =< YmaxE, !, write('To the east is '), write(LocationEName), write('. '))),
+    (location(XminS, YminS, XmaxS, YmaxS, LocationSName),
+    (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write('To the south is '), write(LocationSName), write('. '))),
+    (location(XminW, YminW, XmaxW, YmaxW, LocationWName),
+    (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.'))), nl.
 
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+weapon(X), !, write('Weapon doesnt exist.'), fail.
@@ -186,8 +189,8 @@ status :-
     health(X), !, write('Health : '), write(X), nl,
     armor(Y), !, write('Armor : '),  write(Y), nl,
     currweapon(Z), !, write('Weapon : '), write(Z), nl,
-    inventory(A), !, write('Inventory : '), write(A), write(' '), nl,
-    forall((inventory(B), B \== A, B \== none), (write(A), write(' '))), nl.
+    inventory(A), !, write('Inventory : '), write(A), write(' '),
+    forall((inventory(B), B \== A, B \== none), (write(B), write(' '))), nl.
 
 % help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -227,47 +230,17 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
 
 % Update Game (including add time, )
-updateGame :- addTime, moveEnemy, cleanObjects, winLose.
+updateGame :- addTime, moveEnemy.
 
 % periodicDrop :- 
-
 % move enemy toward player
-moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N))).
+moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N)) ).
 
-% clean objects untuk benda-benda yang sudah berada di dead zone.
-cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z,[X,Y])))).
-
-
-% randomly move an enemy position.
 movePosition(Z,X,Y,N) :-
-    ((N==1), K is X+1, (asserta(position(Z,[K,Y]))));
-    ((N==2), K is X-1, (asserta(position(Z,[K,Y]))));
-    ((N==3), K is Y+1, (asserta(position(Z,[X,K]))));
-    ((N==4), K is Y-1, (asserta(position(Z,[X,K])))).
-
-% check if the player has won or lost
-winLose :-
-    \+ (enemy(X), position(X,[_,_])), retract(win(false)), asserta(win(true)), printWinFalse, retract(play(true)), asserta(play(false)).
-winLose :-
-    player([X,Y]), isDeadZone(X,Y), retract(lose(false)), asserta(lose(true)), printWinFalse, retract(play(true)), asserta(play(false)).
-winLose.
-
-printWinFalse :-
-    (win(true), write('You have won! You are the last man standing!'));
-    (win(false), write('You died! You lose!')).
-
-% realisasi fungsi attack
-attack :-
-    player(LPosition), \+ position(Z,LPosition), enemy(Z), write('Tidak ada enemy!'), nl.
-attack :-
-    weapon(none), write('You have no weapon!').
-attack :-
-    ammo(X), X == 0, write('You have no ammo!').
-attack :- 
-    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), write('Enemy killed!'), reduceAmmo, nl.
-
-reduceAmmo :-
-    ammo(X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
+    ((N==1),(asserta(position(Z,[X+1,Y]))));
+    ((N==2),(asserta(position(Z,[X-1,Y]))));
+    ((N==3),(asserta(position(Z,[X,Y+1]))));
+    ((N==4),(asserta(position(Z,[X,Y-1])))).
 
 printHeader :-
     write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
