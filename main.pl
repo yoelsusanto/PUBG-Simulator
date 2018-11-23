@@ -125,7 +125,6 @@ read_position(Stream, X):-
     asserta(position(X, Y)),
     read(Stream, Z),
     read_position(Stream, Z).
-    
 
 read_inventory(Stream, _) :- at_end_of_stream(Stream), !. 
     
@@ -181,17 +180,23 @@ areaAround :-
     (location(XminW, YminW, XmaxW, YmaxW, LocationWName),
     (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.'))), nl.
 
-take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-take(X) :- \+weapon(X), !, write('Weapon doesnt exist.'), fail.
-take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(X) :- asserta(inventory(X)), player(L), retract(position(X, L)), updateGame.
+item(X) :- weapon(X), !.
+item(X) :- variasiArmor(X), !.
+item(X) :- medicine(X), !.
+item(X) :- ammo(_, X), !.
 
-nearby(X) :- position(X, [A,B|_]), player([P1,P2|_]), A == P1, B == P2.
+take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+take(X) :- \+item(X), !, write('Item doesnt exist.'), fail.
+take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
+take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), player(L), retract(position(X, L)), updateGame.
+
+nearby(X) :- position(X, Lt), player(Lt).
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
-use(X) :- currweapon(Z, A), ammo(Z, X), !, retract(inventory(X)), retract(currweapon(Z, A)) asserta(currweapon(Z, A + 5)), updateGame.
-use(X) :- retract(inventory(X)), asserta(currweapon(X, 0)), updateGame.
+use(X) :- currweapon(Z, A), ammo(Z, X), !, retract(inventory(X)), retract(currweapon(Z, A)), asserta(currweapon(Z, A + 5)), updateGame.
+use(X) :- variasiArmor(X), !, retract(inventory(X)), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), write('Your armor has been fortified.'), nl.
+use(X) :- retract(inventory(X)), asserta(currweapon(X, 0)), write(X), write(' is equipped, but it is empty.'), nl, updateGame.
 
 % status command
 status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -199,18 +204,9 @@ status :-
     health(X), !, write('Health : '), write(X), nl,
     armor(Y), !, write('Armor : '),  write(Y), nl,
     currweapon(Z, N), !, write('Weapon : '), write(Z), nl,
-    ((N \== 0), (write('Ammo : '), write(N), nl)),
     inventory(A), !,
-    (
-        (A \== 'none'),
-        (
-            write('Inventory : '), nl, write('  '), write(A), write(' '),
-            forall((inventory(B), B \== A, B \== none), (write('  '), write(B), write(' '))), nl
-        );
-        (
-            write('Your inventory is empty!')
-        )
-    ).
+    write('Inventory : '), nl, write('  '), write(A), nl,
+    forall((inventory(B), B \== A, B \== none), (write('  '), write(B), write(' '))), nl. 
 
 % help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -237,7 +233,6 @@ printPrio(X,Y) :- position(Z, [X,Y]), ammo(_, Z), !, write('O').
 printPrio(X,Y) :- player([X,Y]), !, write('P').
 printPrio(_,_) :- write('-').
 
-
 % Drop Item
 drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 drop(X) :- \+inventory(X), !, write('Item does not exist in inventory.'), fail.
@@ -250,7 +245,7 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 % Add time
 addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
 
-% Update Game (including add time, )
+% Update Game (including add time)
 updateGame :- addTime, moveEnemy, periodicDrop, cleanObjects, winLose.
 
 % clean objects untuk benda-benda yang sudah berada di dead zone.
@@ -279,7 +274,6 @@ attack :-
 
 reduceAmmo :-
     currweapon(_, X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
-updateGame :- addTime, moveEnemy, periodicDrop.
 
 % periodicDrop :- 
 periodicDrop :-
