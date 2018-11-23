@@ -1,13 +1,13 @@
 /* fakta */
+:- dynamic(currweapon/2).
 :- dynamic(inventory/1).
-:- dynamic(health/1).
-:- dynamic(armor/1).
-:- dynamic(currweapon/1).
-:- dynamic(ammo/1).
 :- dynamic(position/2).    % position predicate
 :- dynamic(player/1).      % player predicate
-:- dynamic(play/1).        % is playing predicate
+:- dynamic(health/1).
+:- dynamic(armor/1).
 :- dynamic(waktu/1).
+:- dynamic(play/1).        % is playing predicate
+:- dynamic(ammo/2).
 :- dynamic(lose/1).
 :- dynamic(win/1).
 
@@ -24,13 +24,14 @@ health(100).
 armor(20).
 
 % current weapon is none
-currweapon(none).
+currweapon(none, 0).
 
-% ------------- Item Variations -------------------
+% ---------------- Item Variations ---------------- %
 % weapon variations
+weapon('Mini 14').
 weapon(sumpitan).
-weapon('voodoo_equipment').
-weapon('cursing_equipment').
+weapon('SCAR-L').
+weapon('AKM').
 
 % enemy variations
 enemy(hantu).
@@ -45,7 +46,10 @@ variasiArmor(aluminium).
 variasiArmor(cangkang).
 
 % ammo
-ammo(peluru).
+ammo(sumpitan, 'anak sumpit').
+ammo('Mini 14', '5.56 mm').
+ammo('SCAR-L', '5.56 mm').
+ammo('AKM', '7.62 mm').
 
 % set locations area
 location(1, 1, 6, 6, 'pochinki').
@@ -78,16 +82,11 @@ start :-
     forall((random(2, 5, N), between(1, N, _)), forall(variasiArmor(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
     % randomly place ammo
-    forall((random(2, 5, N), between(1, N, _)), forall(ammo(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    forall((random(2, 5, N), between(1, N, _)), forall(ammo(_, Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
     % erase play from false to true
     retract(play(false)),
     asserta(play(true)),
-    % Make ammo to zero
-    asserta(ammo(0)).
-    % % set game state
-    % asserta(win(false)),
-    % asserta(lose(false)),
 
     % print required texts
     printHeader,printHelp.
@@ -191,16 +190,27 @@ nearby(X) :- position(X, [A,B|_]), player([P1,P2|_]), A == P1, B == P2.
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
-use(X) :- retract(inventory(X)), asserta(currweapon(X)), updateGame.
+use(X) :- currweapon(Z, A), ammo(Z, X), !, retract(inventory(X)), retract(currweapon(Z, A)) asserta(currweapon(Z, A + 5)), updateGame.
+use(X) :- retract(inventory(X)), asserta(currweapon(X, 0)), updateGame.
 
 % status command
 status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 status :-
     health(X), !, write('Health : '), write(X), nl,
     armor(Y), !, write('Armor : '),  write(Y), nl,
-    currweapon(Z), !, write('Weapon : '), write(Z), nl,
-    inventory(A), !, write('Inventory : '), write(A), write(' '),
-    forall((inventory(B), B \== A, B \== none), (write(B), write(' '))), nl.
+    currweapon(Z, N), !, write('Weapon : '), write(Z), nl,
+    ((N \== 0), (write('Ammo : '), write(N), nl)),
+    inventory(A), !,
+    (
+        (A \== 'none'),
+        (
+            write('Inventory : '), nl, write('  '), write(A), write(' '),
+            forall((inventory(B), B \== A, B \== none), (write('  '), write(B), write(' '))), nl
+        );
+        (
+            write('Your inventory is empty!')
+        )
+    ).
 
 % help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -222,15 +232,15 @@ printPrio(X,Y) :- position(Z, [X,Y]), enemy(Z), !, write('E').
 printPrio(X,Y) :- position(Z, [X,Y]), medicine(Z), !, write('M').
 printPrio(X,Y) :- position(Z, [X,Y]), weapon(Z), !, write('W').
 printPrio(X,Y) :- position(Z, [X,Y]), variasiArmor(Z), !, write('A').
-printPrio(X,Y) :- position(Z, [X,Y]), ammo(Z), !, write('O').
+printPrio(X,Y) :- position(Z, [X,Y]), ammo(_, Z), !, write('O').
 printPrio(X,Y) :- player([X,Y]), !, write('P').
 printPrio(_,_) :- write('-').
 
 
 % Drop Item
 drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-drop(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
-drop(X) :- \+inventory(X), currweapon(X), !, write('You have to put your weapon in your inventory to drop it.'), fail.
+drop(X) :- \+inventory(X), !, write('Item does not exist in inventory.'), fail.
+drop(X) :- \+inventory(X), currweapon(X, _), !, write('You have to put your weapon in your inventory to drop it.'), fail.
 drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)), updateGame.
 
 % Check deadzone
@@ -262,12 +272,12 @@ attack :-
 attack :-
     weapon(none), write('You have no weapon!').
 attack :-
-    ammo(X), X == 0, write('You have no ammo!').
+    currweapon(_, X), X == 0, write('You have no ammo!').
 attack :- 
     player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), write('Enemy killed!'), reduceAmmo, nl.
 
 reduceAmmo :-
-    ammo(X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
+    currweapon(_, X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
 updateGame :- addTime, moveEnemy, periodicDrop.
 
 % periodicDrop :- 
