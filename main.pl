@@ -84,7 +84,7 @@ start :-
     retract(play(false)),
     asserta(play(true)),
     % Make ammo to zero
-    asserta(ammo(0)).
+    asserta(ammo(0)),
     % % set game state
     % asserta(win(false)),
     % asserta(lose(false)),
@@ -207,6 +207,7 @@ help :- play(X), X == false, !, write('You must start the game using "start." fi
 help :- printHelp.
     
 % look
+look :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 look :-
     player([X, Y]),
     (location(Xmin, Ymin, Xmax, Ymax, LocationName),
@@ -271,21 +272,15 @@ reduceAmmo :-
 
 % periodicDrop :- 
 periodicDrop :-
-    waktu(Waktu), Y is mod(Waktu,6),Y == 0,
+    waktu(Waktu), Y is mod(Waktu,4),Y == 0, Block is (Waktu//3)+1,
 
     % randomly place weapon
-    forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    forall((random(1, 1, N), between(1, N, _)), forall(weapon(Z), (random(0+Block, 17-Block, A), random(0+Block, 17-Block, B), asserta(position(Z, [A, B]) ) ) ) ),
 
     % randomly place medicine
-    forall((random(2, 5, N), between(1, N, _)), forall(medicine(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
-    
-    % randomly place armor
-    forall((random(2, 5, N), between(1, N, _)), forall(variasiArmor(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
-    
-    % randomly place ammo
-    forall((random(2, 5, N), between(1, N, _)), forall(ammo(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
-    
-    write('Supply drop has arrived, go hunting!').
+    forall((random(1, 1, N), between(1, N, _)), forall(medicine(Z), (random(0+Block, 17-Block, A), random(0+Block, 17-Block , B), asserta(position(Z, [A, B]) ) ) ) ),
+
+    write('Supply drop has arrived, go hunting!'),nl.
 
 % move enemy toward player
 moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N)) ).
