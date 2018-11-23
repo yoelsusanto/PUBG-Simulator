@@ -272,13 +272,13 @@ reduceAmmo :-
 
 % periodicDrop :- 
 periodicDrop :-
-    waktu(Waktu), Y is mod(Waktu,4),Y == 0, Block is (Waktu//3)+1,
+    waktu(Waktu), Y is mod(Waktu,3),Y == 0, Block is (Waktu//3)+1,
 
     % randomly place weapon
-    forall((random(1, 1, N), between(1, N, _)), forall(weapon(Z), (random(0+Block, 17-Block, A), random(0+Block, 17-Block, B), asserta(position(Z, [A, B]) ) ) ) ),
+    forall((random(1, 1, N), between(1, N, _)), forall(weapon(Z), (X1 is 0 + Block, Y1 is 17 - Block, random(X1, Y1, A), random(X1, Y1, B), asserta(position(Z, [A, B]) ) ) ) ),
 
     % randomly place medicine
-    forall((random(1, 1, N), between(1, N, _)), forall(medicine(Z), (random(0+Block, 17-Block, A), random(0+Block, 17-Block , B), asserta(position(Z, [A, B]) ) ) ) ),
+    forall((random(1, 1, N), between(1, N, _)), forall(medicine(Z), (X1 is 0 + Block, Y1 is 17 - Block, random(X1, Y1, A), random(X1, Y1, B), asserta(position(Z, [A, B]) ) ) ) ),
 
     write('Supply drop has arrived, go hunting!'),nl.
 
