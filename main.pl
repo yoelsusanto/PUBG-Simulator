@@ -3,6 +3,7 @@
 :- dynamic(health/1).
 :- dynamic(armor/1).
 :- dynamic(currweapon/1).
+:- dynamic(ammo/1).
 :- dynamic(position/2).    % position predicate
 :- dynamic(player/1).      % player predicate
 :- dynamic(play/1).        % is playing predicate
@@ -43,7 +44,7 @@ variasiArmor(aluminium).
 variasiArmor(cangkang).
 
 % ammo
-ammo(peluru).
+% ammo(peluru).
 
 % set locations area
 location(1, 1, 6, 6, 'pochinki').
@@ -82,6 +83,8 @@ start :-
     retract(play(false)),
     asserta(play(true)),
 
+    % Make ammo to zero
+    asserta(ammo(0)).
     % % set game state
     % asserta(win(false)),
     % asserta(lose(false)),
@@ -253,10 +256,18 @@ printWinFalse :-
     (win(true), write('You have won! You are the last man standing!'));
     (win(false), write('You died! You lose!')).
 
+% realisasi fungsi attack
 attack :-
     player(LPosition), \+ position(Z,LPosition), enemy(Z), write('Tidak ada enemy!'), nl.
+attack :-
+    weapon(none), write('You have no weapon!').
+attack :-
+    ammo(X), X == 0, write('You have no ammo!').
 attack :- 
-    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), write('Enemy killed!'), nl.
+    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), write('Enemy killed!'), reduceAmmo, nl.
+
+reduceAmmo :-
+    ammo(X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
 
 printHeader :-
     write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
