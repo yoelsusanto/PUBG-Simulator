@@ -230,9 +230,26 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
 
 % Update Game (including add time, )
-updateGame :- addTime, moveEnemy.
+updateGame :- addTime, moveEnemy, periodicDrop.
 
 % periodicDrop :- 
+periodicDrop :-
+    waktu(Waktu), Y is mod(Waktu,6),Y == 0,
+
+    % randomly place weapon
+    forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+
+    % randomly place medicine
+    forall((random(2, 5, N), between(1, N, _)), forall(medicine(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    
+    % randomly place armor
+    forall((random(2, 5, N), between(1, N, _)), forall(variasiArmor(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    
+    % randomly place ammo
+    forall((random(2, 5, N), between(1, N, _)), forall(ammo(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    
+    write('Supply drop has arrived, go hunting!').
+
 % move enemy toward player
 moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N)) ).
 
