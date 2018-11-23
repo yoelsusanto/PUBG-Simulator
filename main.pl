@@ -82,6 +82,36 @@ start :-
     % print required texts
     printHeader,printHelp.
 
+save(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+save(S) :- inventory(I), health(H), armor(A), currweapon(Cw), position(X, Y), player(P), play(Pl), waktu(W),
+        open(S, write, Str),
+        write(Str, H), write(Str,'.'), nl(Str),
+        write(Str, A), write(Str,'.'), nl(Str),
+        write(Str, Cw), write(Str,'.'), nl(Str),
+        write(Str, X), write(Str,'.'), nl(Str),
+        write(Str, Y), write(Str,'.'), nl(Str),
+        write(Str, P), write(Str,'.'), nl(Str),
+        write(Str, Pl), write(Str,'.'), nl(Str),
+        write(Str, W), write(Str,'.'), nl(Str),
+        write(Str, I), write(Str,'.'), nl(Str),
+        forall((inventory(Ilagi), Ilagi \== I, Ilagi \== none), (write(Stream, Ilagi), write(Stream, '.'), nl(Stream))),
+        close(Str), !.
+
+loads(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_)), retract(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
+        open(L, read, Str),
+        read(Str, H), read(Str, A), read(Str, Cw), read(Str, X), read(Str, Y), read(Str, P), read(Str, Pl), read(Str, W), read_inventory(Str, _),
+        close(Str),
+        asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw)), asserta(position(X, Y)), asserta(player(P)), asserta(play(Pl)), asserta(waktu(W)), !.        
+
+read_inventory(Stream, _) :- at_end_of_stream(Stream), !. 
+    
+read_inventory(Stream,[X|L]):- 
+    \+ at_end_of_stream(Stream), 
+    read(Stream,X),
+    asserta(inventory(X)), 
+    read_inventory(Stream,L).
+
 % if quit, make play to false and retract player position
 quit :- retract(play(true)), asserta(play(false)), retractall(player(_)).
 
@@ -142,11 +172,11 @@ use(X) :- retract(inventory(X)), asserta(currweapon(X)), updateGame.
 % status command
 status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 status :-
-    health(X), !, write('Health : '), write(X),
-    armor(Y), !, write('Armor : '),  write(Y),
-    currweapon(Z), !, write('Weapon : '), write(Z),
+    health(X), !, write('Health : '), write(X), nl,
+    armor(Y), !, write('Armor : '),  write(Y), nl,
+    currweapon(Z), !, write('Weapon : '), write(Z), nl,
     inventory(A), !, write('Inventory : '), write(A), write(' '),
-    forall((inventory(B), B \== A, B \== none), (write(A), write(' '))), nl.
+    forall((inventory(B), B \== A, B \== none), (write(B), write(' '))), nl.
 
 % help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -222,7 +252,7 @@ printHelp :-
     write('   attack. -- attack enemy that crosses your path'), nl,
     write('   status. -- show your status'), nl,
     write('   save(Filename). -- save your game'), nl,
-    write('   load(Filename). -- load previously saved game'), nl, nl,
+    write('   loads(Filename). -- load previously saved game'), nl, nl,
     write('Legends:'), nl,
     write('   W = weapon'), nl,
     write('   A = armor'), nl,
