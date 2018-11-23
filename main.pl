@@ -240,7 +240,7 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
 
 % Update Game (including add time, )
-updateGame :- addTime, moveEnemy, cleanObjects, winLose, periodicDrop.
+updateGame :- addTime, moveEnemy, periodicDrop, cleanObjects, winLose.
 
 % clean objects untuk benda-benda yang sudah berada di dead zone.
 cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z,[X,Y])))).
@@ -268,7 +268,6 @@ attack :-
 
 reduceAmmo :-
     ammo(X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
-updateGame :- addTime, moveEnemy, periodicDrop.
 
 % periodicDrop :- 
 periodicDrop :-
