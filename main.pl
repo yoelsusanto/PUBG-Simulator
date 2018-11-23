@@ -3,10 +3,13 @@
 :- dynamic(health/1).
 :- dynamic(armor/1).
 :- dynamic(currweapon/1).
+:- dynamic(ammo/1).
 :- dynamic(position/2).    % position predicate
 :- dynamic(player/1).      % player predicate
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(waktu/1).
+:- dynamic(lose/1).
+:- dynamic(win/1).
 
 % set inventory to no item
 inventory(none).
@@ -54,6 +57,8 @@ location(13, 7, 15, 15, 'CC barat').
 
 % set play to default false
 play(false).
+win(false).
+lose(false).
 
 /* rule */
 start :-
@@ -78,6 +83,11 @@ start :-
     % erase play from false to true
     retract(play(false)),
     asserta(play(true)),
+    % Make ammo to zero
+    asserta(ammo(0)).
+    % % set game state
+    % asserta(win(false)),
+    % asserta(lose(false)),
 
     % print required texts
     printHeader,printHelp.
@@ -230,7 +240,34 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
 
 % Update Game (including add time, )
-updateGame :- addTime, moveEnemy.
+updateGame :- addTime, moveEnemy, cleanObjects, winLose.
+
+% clean objects untuk benda-benda yang sudah berada di dead zone.
+cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z,[X,Y])))).
+
+% check if the player has won or lost
+winLose :-
+    \+ (enemy(X), position(X,[_,_])), retract(win(false)), asserta(win(true)), printWinFalse, retract(play(true)), asserta(play(false)).
+winLose :-
+    player([X,Y]), isDeadZone(X,Y), retract(lose(false)), asserta(lose(true)), printWinFalse, retract(play(true)), asserta(play(false)).
+winLose.
+
+printWinFalse :-
+    (win(true), write('You have won! You are the last man standing!'));
+    (win(false), write('You died! You lose!')).
+
+% realisasi fungsi attack
+attack :-
+    player(LPosition), \+ position(Z,LPosition), enemy(Z), write('Tidak ada enemy!'), nl.
+attack :-
+    weapon(none), write('You have no weapon!').
+attack :-
+    ammo(X), X == 0, write('You have no ammo!').
+attack :- 
+    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), write('Enemy killed!'), reduceAmmo, nl.
+
+reduceAmmo :-
+    ammo(X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
 
 % periodicDrop :- 
 % move enemy toward player
