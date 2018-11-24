@@ -9,11 +9,12 @@
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(lose/1).
 :- dynamic(win/1).
+:- dynamic(maxInventory/1). %to define the maximum item to be stored in inventory
 
 % ---------------- Item Variations ---------------- %
 % weapon variations
 weapon('Mini 14').
-weapon(sumpitan).
+weapon('sumpitan').
 weapon('SCAR-L').
 weapon('AKM').
 
@@ -30,7 +31,7 @@ variasiArmor(aluminium).
 variasiArmor(cangkang).
 
 % ammo
-ammo(sumpitan, 'anak sumpit').
+ammo('sumpitan', 'anak sumpit').
 ammo('Mini 14', '5.56 mm').
 ammo('SCAR-L', '5.56 mm').
 ammo('AKM', '7.62 mm').
@@ -42,6 +43,9 @@ location(10, 1, 15, 6, 'the desert').
 location(1, 7, 5, 15, 'labtek V').
 location(6, 7, 12, 15, 'labtek VI').
 location(13, 7, 15, 15, 'CC barat').
+
+% set play to false
+play(false).
 
 /* rule */
 start :-
@@ -63,23 +67,34 @@ start :-
     % randomly place ammo
     forall((random(2, 5, N), between(1, N, _)), forall(ammo(_, Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
+    % set max inventory
+    asserta(maxInventory(10)),
+
     % erase play from false to true
     retract(play(false)),
     asserta(play(true)),
+
     % set inventory to no item
     asserta(inventory(none)),
+
     % set waktu to zero
     asserta(waktu(0)),
+
     % default health is 100
     asserta(health(100)),
+
     % starting armor is 20
     asserta(armor(20)),
+
     % current weapon is none
+    % currweapon(nama_weapon, jml peluru untuk weapon itu)
     asserta(currweapon(none, 0)),
+    
     % set play to default false
     asserta(play(false)),
     asserta(win(false)),
     asserta(lose(false)),
+    
     % print required texts
     printHeader,printHelp.
 
@@ -196,6 +211,11 @@ take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.
 take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), nl, player(L), retract(position(X, L)), updateGame.
 
 nearby(X) :- position(X, Lt), player(Lt).
+
+countInven(Count) :-
+    findall(X,inventory(X),L),
+    length(L,Count).
+
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
