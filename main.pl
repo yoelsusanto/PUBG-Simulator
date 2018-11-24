@@ -151,7 +151,7 @@ printMap(X,Y,DeadZone) :-
 
 % move player position (Final)
 n :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-n :- player([X, Y]), Yn is Y - 1, isDeadZone(X,Yn), write('You cant move into deadzone!'),!. % apa lagi nih
+n :- player([X, Y]), Yn is Y - 1, isDeadZone(X,Yn), write('You cant move into deadzone!'),!.
 n :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, updateGame, !.
 
 s :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -186,9 +186,9 @@ item(X) :- medicine(X), !.
 item(X) :- ammo(_, X), !.
 
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-take(X) :- \+item(X), !, write('Item doesnt exist.'), fail.
+take(X) :- \+item(X), !, write('Weapon doesnt exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), player(L), retract(position(X, L)), updateGame.
+take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), nl, player(L), retract(position(X, L)), updateGame.
 
 nearby(X) :- position(X, Lt), player(Lt).
 
@@ -203,9 +203,8 @@ status :- play(X), X == false, !, write('You must start the game using "start." 
 status :-
     health(X), !, write('Health : '), write(X), nl,
     armor(Y), !, write('Armor : '),  write(Y), nl,
-    currweapon(Z, N), !, write('Weapon : '), write(Z), nl,
-    inventory(A), !,
-    write('Inventory : '), nl, write('  '), write(A), nl,
+    currweapon(Z, _), !, write('Weapon : '), write(Z), nl,
+    inventory(A), !, write('Inventory : '), nl, write('  '), write(A), nl,
     forall((inventory(B), B \== A, B \== none), (write('  '), write(B), write(' '))), nl. 
 
 % help (Final)
@@ -243,10 +242,11 @@ drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)), updateGame.
 isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Block); Y < Block; Y >= (17-Block))),!.
 
 % Add time
-addTime :- waktu(X), Y is X, NewX is Y + 1, retract(waktu(X)), asserta(waktu(NewX)).
+addTime :- retract(waktu(X)), Y is X + 1, asserta(waktu(Y)).
 
 % Update Game (including add time)
-updateGame :- addTime, moveEnemy, periodicDrop, cleanObjects, winLose.
+updateGame :- addTime, cleanObjects, winLose, win(W), lose(L), (W \== true, L \== true) -> upGame.
+upGame :- moveEnemy, periodicDrop.
 
 % clean objects untuk benda-benda yang sudah berada di dead zone.
 cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z,[X,Y])))).
