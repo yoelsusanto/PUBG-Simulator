@@ -76,6 +76,8 @@ start :-
 
     % set inventory to no item
     asserta(inventory(none)),
+    asserta(inventory(neone)),
+    asserta(inventory(neeone)),
 
     % set waktu to zero
     asserta(waktu(0)),
@@ -91,10 +93,9 @@ start :-
     asserta(currweapon(none, 0)),
     
     % set play to default false
-    asserta(play(false)),
     asserta(win(false)),
     asserta(lose(false)),
-    
+
     % print required texts
     printHeader,printHelp.
 
