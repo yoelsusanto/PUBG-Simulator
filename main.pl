@@ -74,10 +74,10 @@ start :-
     retract(play(false)),
     asserta(play(true)),
 
-    % set inventory to no item
-    asserta(inventory(none)),
-    asserta(inventory(neone)),
-    asserta(inventory(neeone)),
+    % set inventory to no item (no inventory() facts)
+    % asserta(inventory(none)),
+    % asserta(inventory(neone)),
+    % asserta(inventory(neeone)),
 
     % set waktu to zero
     asserta(waktu(0)),
@@ -209,7 +209,7 @@ item(X) :- ammo(_, X), !.
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+item(X), !, write('Weapon doesnt exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(X) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! Taking item failed!'), nl, fail.
+take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! Taking item failed!'), nl, fail.
 take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), nl, player(L), retract(position(X, L)), updateGame.
 
 nearby(X) :- position(X, Lt), player(Lt).
@@ -220,9 +220,22 @@ countInven(Count) :-
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
+% untuk ammo
 use(X) :- currweapon(Z, A), ammo(Z, X), !, retract(inventory(X)), retract(currweapon(Z, A)), asserta(currweapon(Z, A + 5)), write('% ammo has been added.'), nl, updateGame.
+% untuk armor
 use(X) :- variasiArmor(X), !, retract(inventory(X)), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), write('Your armor has been fortified.'), nl.
-use(X) :- retract(inventory(X)), asserta(currweapon(X, 0)), write(X), write(' is equipped, but it is empty.'), nl, updateGame.
+% untuk weapon
+use(X) :- weapon(X), !, retract(inventory(X)), asserta(currweapon(X, 0)), write(X), write(' is equipped, but it is empty.'), nl, updateGame.
+% untuk medicine
+use(X) :- medicine(X), !, retract(inventory(X)), addHealth(X).
+
+addHealth(X) :-
+    X=='batu1', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+10,
+    ((UpHealth > 100, asserta(health(CurHealth)));asserta(health(CurHealth))).
+
+addHealth(X) :-
+    X=='batu2', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+20,
+    ((UpHealth > 100, asserta(health(CurHealth)));asserta(health(CurHealth))).
 
 % status command
 status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -230,8 +243,10 @@ status :-
     health(X), !, write('Health : '), write(X), nl,
     armor(Y), !, write('Armor : '),  write(Y), nl,
     currweapon(Z, _), !, write('Weapon : '), write(Z), nl,
-    inventory(A), !, write('Inventory : '), nl, write('  '), write(A), nl,
-    forall((inventory(B), B \== A, B \== none), (write('  '), write(B), nl)), nl. 
+    ((\+ inventory(_), !, write('Inventory kosong!')) ;
+    (findall(Something,inventory(Something),L), write('Inventory: '), write(L))), nl.
+    % inventory(A), !, write('Inventory : '), nl, write('  '), write(A), nl,
+    % forall((inventory(B), B \== A, B \== none), (write('  '), write(B), nl)), nl. 
 
 % help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
