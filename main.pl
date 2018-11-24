@@ -7,24 +7,8 @@
 :- dynamic(armor/1).
 :- dynamic(waktu/1).
 :- dynamic(play/1).        % is playing predicate
-:- dynamic(ammo/2).
 :- dynamic(lose/1).
 :- dynamic(win/1).
-
-% set inventory to no item
-inventory(none).
-
-% set waktu to zero
-waktu(0).
-
-% default health is 100
-health(100).
-
-% starting armor is 20
-armor(20).
-
-% current weapon is none
-currweapon(none, 0).
 
 % ---------------- Item Variations ---------------- %
 % weapon variations
@@ -59,11 +43,6 @@ location(1, 7, 5, 15, 'labtek V').
 location(6, 7, 12, 15, 'labtek VI').
 location(13, 7, 15, 15, 'CC barat').
 
-% set play to default false
-play(false).
-win(false).
-lose(false).
-
 /* rule */
 start :-
     % randomly place player
@@ -87,16 +66,30 @@ start :-
     % erase play from false to true
     retract(play(false)),
     asserta(play(true)),
-
+    % set inventory to no item
+    asserta(inventory(none)),
+    % set waktu to zero
+    asserta(waktu(0)),
+    % default health is 100
+    asserta(health(100)),
+    % starting armor is 20
+    asserta(armor(20)),
+    % current weapon is none
+    asserta(currweapon(none, 0)),
+    % set play to default false
+    asserta(play(false)),
+    asserta(win(false)),
+    asserta(lose(false)),
     % print required texts
     printHeader,printHelp.
 
 save(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-save(S) :- inventory(I), health(H), armor(A), currweapon(Cw), position(X, Y), player(P), play(Pl), waktu(W),
+save(S) :- inventory(I), health(H), armor(A), currweapon(Cw, Ca), position(X, Y), player(P), play(Pl), waktu(W),
         open(S, write, Str),
         write(Str, H), write(Str,'.'), nl(Str),
         write(Str, A), write(Str,'.'), nl(Str),
         write(Str, Cw), write(Str,'.'), nl(Str),
+        write(Str, Ca), write(Str,'.'), nl(Str),
         write(Str, P), write(Str,'.'), nl(Str),
         write(Str, Pl), write(Str,'.'), nl(Str),
         write(Str, W), write(Str,'.'), nl(Str),
@@ -109,11 +102,11 @@ save(S) :- inventory(I), health(H), armor(A), currweapon(Cw), position(X, Y), pl
         close(Str), !.
 
 loads(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_)), retractall(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
+loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_, _)), retractall(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
         open(L, read, Str),
-        read(Str, H), read(Str, A), read(Str, Cw),  read(Str, P), read(Str, Pl), read(Str, W),read(Str, X), read_position(Str, X), read_inventory(Str, _),
+        read(Str, H), read(Str, A), read(Str, Cw), read(Str, Ca), read(Str, P), read(Str, Pl), read(Str, W),read(Str, X), read_position(Str, X), read_inventory(Str, _),
         close(Str),
-        asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw)),  asserta(player(P)),  asserta(waktu(W)), asserta(play(Pl)), !.        
+        asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw, Ca)),  asserta(player(P)),  asserta(waktu(W)), asserta(play(Pl)), !.        
 
 end_of_inventory('inventory').
 
@@ -135,7 +128,19 @@ read_inventory(Stream,[X|L]):-
     read_inventory(Stream,L).
 
 % if quit, make play to false and retract player position
-quit :- retract(play(true)), asserta(play(false)), retractall(player(_)).
+quit :-
+    retract(play(true)),
+    retractall(currweapon(_, _)),
+    retractall(inventory(_)),
+    retractall(position(_, _)),
+    retractall(player(_)),
+    retractall(health(_)),
+    retractall(armor(_)),
+    retractall(waktu(_)),
+    retractall(play(_)),
+    retractall(lose(_)),
+    retractall(win(_)),
+    asserta(play(false)).
 
 % Map (Final)
 map :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -194,7 +199,7 @@ nearby(X) :- position(X, Lt), player(Lt).
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
-use(X) :- currweapon(Z, A), ammo(Z, X), !, retract(inventory(X)), retract(currweapon(Z, A)), asserta(currweapon(Z, A + 5)), updateGame.
+use(X) :- currweapon(Z, A), ammo(Z, X), !, retract(inventory(X)), retract(currweapon(Z, A)), asserta(currweapon(Z, A + 5)), write('% ammo has been added.'), nl, updateGame.
 use(X) :- variasiArmor(X), !, retract(inventory(X)), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), write('Your armor has been fortified.'), nl.
 use(X) :- retract(inventory(X)), asserta(currweapon(X, 0)), write(X), write(' is equipped, but it is empty.'), nl, updateGame.
 
@@ -205,7 +210,7 @@ status :-
     armor(Y), !, write('Armor : '),  write(Y), nl,
     currweapon(Z, _), !, write('Weapon : '), write(Z), nl,
     inventory(A), !, write('Inventory : '), nl, write('  '), write(A), nl,
-    forall((inventory(B), B \== A, B \== none), (write('  '), write(B), write(' '))), nl. 
+    forall((inventory(B), B \== A, B \== none), (write('  '), write(B), nl)), nl. 
 
 % help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -253,9 +258,9 @@ cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z
 
 % check if the player has won or lost
 winLose :-
-    \+ (enemy(X), position(X,[_,_])), retract(win(false)), asserta(win(true)), printWinFalse, retract(play(true)), asserta(play(false)).
+    \+ (enemy(X), position(X,[_,_])), retract(win(false)), asserta(win(true)), printWinFalse, quit.
 winLose :-
-    player([X,Y]), isDeadZone(X,Y), retract(lose(false)), asserta(lose(true)), printWinFalse, retract(play(true)), asserta(play(false)).
+    player([X,Y]), isDeadZone(X,Y), retract(lose(false)), asserta(lose(true)), printWinFalse, quit.
 winLose.
 
 printWinFalse :-
