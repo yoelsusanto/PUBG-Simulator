@@ -209,13 +209,13 @@ item(X) :- ammo(_, X), !.
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+item(X), !, write('Item does not exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(X) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not sstore anything else!'), nl, fail.
+take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not sstore anything else!'), nl, fail.
 take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), nl, player(L), retract(position(X, L)), updateGame.
 
 nearby(X) :- position(X, Lt), player(Lt).
 
 countInven(Count) :-
-    findall(X,inventory(X),L),
+    findall(X, (inventory(X), X \== none), L),
     length(L,Count).
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
