@@ -1,4 +1,5 @@
 /* fakta */
+:- dynamic(maxInventory/1). %to define the maximum item to be stored in inventory
 :- dynamic(currweapon/2).
 :- dynamic(inventory/1).
 :- dynamic(position/2).    % position predicate
@@ -9,12 +10,11 @@
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(lose/1).
 :- dynamic(win/1).
-:- dynamic(maxInventory/1). %to define the maximum item to be stored in inventory
 
 % ---------------- Item Variations ---------------- %
 % weapon variations
-weapon('Mini 14').
 weapon('sumpitan').
+weapon('Mini 14').
 weapon('SCAR-L').
 weapon('AKM').
 
@@ -37,12 +37,12 @@ ammo('SCAR-L', '5.56 mm').
 ammo('AKM', '7.62 mm').
 
 % set locations area
-location(1, 1, 6, 6, 'pochinki').
-location(7, 1, 9, 6, 'the forest').
 location(10, 1, 15, 6, 'the desert').
-location(1, 7, 5, 15, 'labtek V').
 location(6, 7, 12, 15, 'labtek VI').
 location(13, 7, 15, 15, 'CC barat').
+location(7, 1, 9, 6, 'the forest').
+location(1, 7, 5, 15, 'labtek V').
+location(1, 1, 6, 6, 'pochinki').
 
 % set play to false
 play(false).
@@ -207,15 +207,15 @@ item(X) :- medicine(X), !.
 item(X) :- ammo(_, X), !.
 
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-take(X) :- \+item(X), !, write('Weapon doesnt exist.'), fail.
+take(X) :- \+item(X), !, write('Item does not exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! Taking item failed!'), nl, fail.
+take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not sstore anything else!'), nl, fail.
 take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), nl, player(L), retract(position(X, L)), updateGame.
 
 nearby(X) :- position(X, Lt), player(Lt).
 
 countInven(Count) :-
-    findall(X,inventory(X),L),
+    findall(X, (inventory(X), X \== none), L),
     length(L,Count).
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
