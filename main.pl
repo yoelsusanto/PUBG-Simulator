@@ -296,7 +296,7 @@ printPrio(_,_) :- write('-').
 drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 drop(X) :- \+inventory(X,_), !, write('Item does not exist in inventory.'), fail.
 drop(X) :- weapon(X), currweapon(X, _), !, write('You have to unequip your weapon in your inventory to drop it.'), fail.
-drop(X) :- reduceItem(X), player(L), asserta(position(X,L)), updateGame.
+drop(X) :- reduceItem(X), player(L), asserta(position(X,L)), write('You have dropped '), write(X), updateGame.
 
 unequip :-
     currweapon(NamaWeapon,Pelor) -> (retract(currweapon(NamaWeapon,Pelor)), ammo(NamaWeapon,NamaPelor), addItem(NamaPelor,Pelor), addItem(NamaWeapon,1), format('~w is now in your inventory and its corresponding ammo is back on your inventory.',[NamaWeapon]));
