@@ -13,9 +13,9 @@
 % ---------------- Item Variations ---------------- %
 % weapon variations
 weapon('sumpitan').
-weapon('Mini 14').
-weapon('SCAR-L').
-weapon('AKM').
+weapon('mini-14').
+weapon('scar-l').
+weapon('akm').
 
 % enemy variations
 enemy(hantu).
@@ -30,10 +30,10 @@ variasiArmor(aluminium).
 variasiArmor(cangkang).
 
 % ammo
-ammo('sumpitan', 'anak sumpit').
-ammo('Mini 14', '5.56 mm').
-ammo('SCAR-L', '5.56 mm').
-ammo('AKM', '7.62 mm').
+ammo('sumpitan', 'anak_sumpit').
+ammo('mini-14', '5,56-mm').
+ammo('scar-l', '5,56-mm').
+ammo('akm', '7,62-mm').
 
 % set locations area
 location(10, 1, 15, 6, 'the desert').
@@ -74,9 +74,9 @@ start :-
     asserta(play(true)),
 
     % testing
-    asserta(currweapon('Mini 14',0)),
-    asserta(inventory('5.56 mm',5)),
-    asserta(inventory('7.62 mm',5)),
+    asserta(currweapon('mini-14',0)),
+    asserta(inventory('5,56-mm',5)),
+    asserta(inventory('7,62-mm',5)),
 
     % set inventory to no item (no inventory() facts)
     % asserta(inventory(none)),
@@ -103,49 +103,53 @@ start :-
     % print required texts
     printHeader,printHelp.
 
-% save(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-% save(S) :- inventory(I), health(H), armor(A), currweapon(Cw, Ca), position(X, Y), player(P), play(Pl), waktu(W),
-%         open(S, write, Str),
-%         write(Str, H), write(Str,'.'), nl(Str),
-%         write(Str, A), write(Str,'.'), nl(Str),
-%         write(Str, Cw), write(Str,'.'), nl(Str),
-%         write(Str, Ca), write(Str,'.'), nl(Str),
-%         write(Str, P), write(Str,'.'), nl(Str),
-%         write(Str, Pl), write(Str,'.'), nl(Str),
-%         write(Str, W), write(Str,'.'), nl(Str),
-%         write(Str, X), write(Str,'.'), nl(Str),
-%         write(Str, Y), write(Str,'.'), nl(Str),
-%         forall((position(Xl,Yl), Yl \== Y, Yl \== none) , (write(Str, Xl), write(Str, '.'), nl(Str), write(Str, Yl), write(Str, '.'), nl(Str))),
-%         write(Str, 'inventory.'), nl(Str),
-%         write(Str, I), write(Str,'.'), nl(Str),Fc
-%         forall((inventory(Ilagi), Ilagi \== I, Ilagi \== none), (write(Str, Ilagi), write(Str, '.'), nl(Str))),
-%         close(Str), !.
+save(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+save(S) :- inventory(Ia, Ib), health(H), armor(A), currweapon(Cw, Ca), position(X, Y), player(P), play(Pl), waktu(W),
+        tell(S),
+        write(H), write('.'), nl,
+        write(A), write('.'), nl,
+        write(Cw), write('.'), nl,
+        write(Ca), write('.'), nl,
+        write(P), write('.'), nl,
+        write(Pl), write('.'), nl,
+        write(W), write('.'), nl,
+        write(X), write('.'), nl,
+        write(Y), write('.'), nl,
+        forall((position(Xl,Yl), Yl \== Y, Yl \== none) , (write(Xl), write('.'), nl, write(Yl), write('.'), nl)),
+        write('done.'), nl,
+        write(Ia), write('.'), nl,
+        write(Ib), write('.'), nl,
+        forall((inventory(Ialagi, Iblagi), Ialagi \== Ia, Ialagi \== none), (write(Ialagi), write('.'), nl, write(Iblagi), write('.'), nl)),
+        write('done.'),
+        told, !.
 
-% loads(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-% loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_, _)), retractall(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
-%         open(L, read, Str),
-%         read(Str, H), read(Str, A), read(Str, Cw), read(Str, Ca), read(Str, P), read(Str, Pl), read(Str, W),read(Str, X), read_position(Str, X), read_inventory(Str, _),
-%         close(Str),
-%         asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw, Ca)),  asserta(player(P)),  asserta(waktu(W)), asserta(play(Pl)), !.        
+loads(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+loads(L) :- retractall(inventory(_,_)), retract(health(_)), retract(armor(_)), retract(currweapon(_, _)), retractall(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
+        see(L),
+        read(H), read(A), read(Cw), read(Ca), read(P), read(Pl), read(W),read(X), read_position(X), read(I), read_inventory(I),
+        seen,
+        asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw, Ca)),  asserta(player(P)),  asserta(waktu(W)), asserta(play(Pl)), !.        
 
-% end_of_inventory('inventory').
+end_of_everything('done').
 
-% read_position(_, X) :- end_of_inventory(X), !.
+read_position(X) :- end_of_everything(X), !.
 
-% read_position(Stream, X):- 
-%     \+end_of_inventory(X),  
-%     read(Stream, Y),
-%     asserta(position(X, Y)),
-%     read(Stream, Z),
-%     read_position(Stream, Z).
+read_position(X):- 
+    \+end_of_everything(X),  
+    read(Y),
+    asserta(position(X, Y)),
+    read(Z),
+    read_position(Z).
 
-% read_inventory(Stream, _) :- at_end_of_stream(Stream), !. 
+
+read_inventory(I) :- end_of_everything(I), !. 
     
-% read_inventory(Stream,[X|L]):- 
-%     \+ at_end_of_stream(Stream), 
-%     read(Stream,X),
-%     asserta(inventory(X)), 
-%     read_inventory(Stream,L).
+read_inventory(X):- 
+    \+ end_of_everything(X), 
+    read(Y),
+    asserta(inventory(X, Y)),
+    read(I), 
+    read_inventory(I).
 
 % if quit, make play to false and retract player position
 quit :-
