@@ -219,7 +219,7 @@ take(X) :- \+item(X), !, write('Item does not exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
 take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not sstore anything else!'), nl, fail.
 take(NamaItem) :- 
-    (ammo(_,NamaItem) -> Qty is 5 ; Qty is 1) , addItem(NamaItem,Qty),
+    (ammo(_,NamaItem) -> Qty is 5 ; Qty is 1) , addItem(NamaItem,Qty), !,
     write('You took the '), write(NamaItem), write('.'), nl, player(L), retract(position(NamaItem, L)), updateGame.
 
 haventhave(NamaItem) :-
@@ -240,19 +240,15 @@ use(X) :- \+inventory(X,_), !, write('Item doesnt exist in inventory.'), fail.
 % untuk ammo
 use(X) :-
     ammo(JenisWeapon, X),
-    (( currweapon(JenisWeapon,JlhAmmo)) -> (inventory(X,Jml), JlhAmmoNew is JlhAmmo + Jml, retract(currweapon(JenisWeapon,JlhAmmo)), asserta(currweapon(JenisWeapon,JlhAmmoNew)), retract(inventory(X,Jml)), !, write('Ammo has been added.') ) ; 
-    (!, write('You are not equipping weapon or the ammo is not suitable for your weapon type.')) ), nl, updateGame.
+    (( currweapon(JenisWeapon,JlhAmmo), !) -> (inventory(X,Jml), JlhAmmoNew is JlhAmmo + Jml, retract(currweapon(JenisWeapon,JlhAmmo)), asserta(currweapon(JenisWeapon,JlhAmmoNew)), retract(inventory(X,Jml)), !, write('Ammo has been added.') ) ; 
+    (!, write('You are not equipping weapon or the ammo is not suitable for your weapon type.')) ), !, nl, updateGame.
 
 % untuk armor
-use(X) :- variasiArmor(X), !, reduceItem(X), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), write('Your armor has been fortified.'), nl.
+use(X) :- variasiArmor(X), reduceItem(X), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), !, write('Your armor has been fortified.'), nl, updateGame.
 % untuk weapon
-use(X) :- weapon(X), !, reduceItem(X), asserta(currweapon(X, 0)), write(X), write(' is equipped!'), nl, updateGame.
+use(X) :- weapon(X), reduceItem(X), asserta(currweapon(X, 0)), !, write(X), write(' is equipped!'), nl, updateGame.
 % untuk medicine
-use(X) :- medicine(X), !, reduceItem(X), addHealth(X).
-
-reduceItem(X) :-
-    inventory(X,Jml), retract(inventory(X,Jml)),
-    ((Jml > 1) -> JmlBaru is Jml-1, asserta(inventory(X,JmlBaru)) ; true).
+use(X) :- medicine(X), reduceItem(X), addHealth(X), !, write('Health is added!'), nl, updateGame.
 
 addHealth(X) :-
     X=='batu1', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+10,
@@ -302,6 +298,10 @@ drop(X) :- \+inventory(X,_), !, write('Item does not exist in inventory.'), fail
 drop(X) :- weapon(X), currweapon(X, _), !, write('You have to unequip your weapon in your inventory to drop it.'), fail.
 drop(X) :- reduceItem(X), player(L), asserta(position(X,L)), write('You have dropped '), write(X), updateGame.
 
+reduceItem(X) :-
+    inventory(X,Jml), retract(inventory(X,Jml)),
+    ((Jml > 1) -> JmlBaru is Jml-1, asserta(inventory(X,JmlBaru)) ; true).
+
 unequip :-
     currweapon(NamaWeapon,Pelor) -> (retract(currweapon(NamaWeapon,Pelor)), ammo(NamaWeapon,NamaPelor), addItem(NamaPelor,Pelor), addItem(NamaWeapon,1), format('~w is now in your inventory and its corresponding ammo is back on your inventory.',[NamaWeapon]));
     format('Are you sure you are equiping any weapon?~N',[]).
@@ -313,13 +313,13 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- retract(waktu(X)), Y is X + 1, asserta(waktu(Y)).
 
 % Update Game (including add time)
-updateGame :- addTime, cleanObjects, moveEnemy, attacked, winLose, win(W), lose(L), (W \== true, L \== true) -> upGame.
+updateGame :- addTime, cleanObjects, moveEnemy, attacked, winLose, win(W), lose(L), ((W \== true, L \== true) -> upGame;true), !.
 upGame :-periodicDrop.
 
 % clean objects untuk benda-benda yang sudah berada di dead zone.
 cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z,[X,Y])))).
 
-% getattacked
+% get attacked
 attacked :-
     player(Lplayer) , forall((position(X,Lplayer), enemy(X)), (reduceHealth(-20), write('You got attacked! HP -20!'))), nl.
 attacked.
