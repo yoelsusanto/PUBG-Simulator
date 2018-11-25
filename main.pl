@@ -1,7 +1,7 @@
 /* fakta */
-:- dynamic(maxInventory/1). %to define the maximum item to be stored in inventory
+:- dynamic(maxInventory/1). %to define the maximum type of item to be stored in inventory
 :- dynamic(currweapon/2).
-:- dynamic(inventory/1).
+:- dynamic(inventory/2).
 :- dynamic(position/2).    % position predicate
 :- dynamic(player/1).      % player predicate
 :- dynamic(health/1).
@@ -10,7 +10,6 @@
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(lose/1).
 :- dynamic(win/1).
-
 % ---------------- Item Variations ---------------- %
 % weapon variations
 weapon('sumpitan').
@@ -56,7 +55,7 @@ start :-
     forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
     % randomly place enemy
-    forall((random(2, 5, N), between(1, N, _)), forall(enemy(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    forall((random(24, 25, N), between(1, N, _)), forall(enemy(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
 
     % randomly place medicine
     forall((random(2, 5, N), between(1, N, _)), forall(medicine(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
@@ -74,6 +73,11 @@ start :-
     retract(play(false)),
     asserta(play(true)),
 
+    % testing
+    asserta(currweapon('Mini 14',0)),
+    asserta(inventory('5.56 mm',5)),
+    asserta(inventory('7.62 mm',5)),
+
     % set inventory to no item (no inventory() facts)
     % asserta(inventory(none)),
     % asserta(inventory(neone)),
@@ -90,7 +94,7 @@ start :-
 
     % current weapon is none
     % currweapon(nama_weapon, jml peluru untuk weapon itu)
-    asserta(currweapon(none, 0)),
+    % asserta(currweapon(none, 0)),
     
     % set play to default false
     asserta(win(false)),
@@ -99,49 +103,49 @@ start :-
     % print required texts
     printHeader,printHelp.
 
-save(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-save(S) :- inventory(I), health(H), armor(A), currweapon(Cw, Ca), position(X, Y), player(P), play(Pl), waktu(W),
-        open(S, write, Str),
-        write(Str, H), write(Str,'.'), nl(Str),
-        write(Str, A), write(Str,'.'), nl(Str),
-        write(Str, Cw), write(Str,'.'), nl(Str),
-        write(Str, Ca), write(Str,'.'), nl(Str),
-        write(Str, P), write(Str,'.'), nl(Str),
-        write(Str, Pl), write(Str,'.'), nl(Str),
-        write(Str, W), write(Str,'.'), nl(Str),
-        write(Str, X), write(Str,'.'), nl(Str),
-        write(Str, Y), write(Str,'.'), nl(Str),
-        forall((position(Xl,Yl), Yl \== Y, Yl \== none) , (write(Str, Xl), write(Str, '.'), nl(Str), write(Str, Yl), write(Str, '.'), nl(Str))),
-        write(Str, 'inventory.'), nl(Str),
-        write(Str, I), write(Str,'.'), nl(Str),
-        forall((inventory(Ilagi), Ilagi \== I, Ilagi \== none), (write(Str, Ilagi), write(Str, '.'), nl(Str))),
-        close(Str), !.
+% save(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+% save(S) :- inventory(I), health(H), armor(A), currweapon(Cw, Ca), position(X, Y), player(P), play(Pl), waktu(W),
+%         open(S, write, Str),
+%         write(Str, H), write(Str,'.'), nl(Str),
+%         write(Str, A), write(Str,'.'), nl(Str),
+%         write(Str, Cw), write(Str,'.'), nl(Str),
+%         write(Str, Ca), write(Str,'.'), nl(Str),
+%         write(Str, P), write(Str,'.'), nl(Str),
+%         write(Str, Pl), write(Str,'.'), nl(Str),
+%         write(Str, W), write(Str,'.'), nl(Str),
+%         write(Str, X), write(Str,'.'), nl(Str),
+%         write(Str, Y), write(Str,'.'), nl(Str),
+%         forall((position(Xl,Yl), Yl \== Y, Yl \== none) , (write(Str, Xl), write(Str, '.'), nl(Str), write(Str, Yl), write(Str, '.'), nl(Str))),
+%         write(Str, 'inventory.'), nl(Str),
+%         write(Str, I), write(Str,'.'), nl(Str),Fc
+%         forall((inventory(Ilagi), Ilagi \== I, Ilagi \== none), (write(Str, Ilagi), write(Str, '.'), nl(Str))),
+%         close(Str), !.
 
-loads(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_, _)), retractall(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
-        open(L, read, Str),
-        read(Str, H), read(Str, A), read(Str, Cw), read(Str, Ca), read(Str, P), read(Str, Pl), read(Str, W),read(Str, X), read_position(Str, X), read_inventory(Str, _),
-        close(Str),
-        asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw, Ca)),  asserta(player(P)),  asserta(waktu(W)), asserta(play(Pl)), !.        
+% loads(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
+% loads(L) :- retractall(inventory(_)), retract(health(_)), retract(armor(_)), retract(currweapon(_, _)), retractall(position(_, _)), retract(player(_)), retract(play(_)), retract(waktu(_)), 
+%         open(L, read, Str),
+%         read(Str, H), read(Str, A), read(Str, Cw), read(Str, Ca), read(Str, P), read(Str, Pl), read(Str, W),read(Str, X), read_position(Str, X), read_inventory(Str, _),
+%         close(Str),
+%         asserta(health(H)), asserta(armor(A)), asserta(currweapon(Cw, Ca)),  asserta(player(P)),  asserta(waktu(W)), asserta(play(Pl)), !.        
 
-end_of_inventory('inventory').
+% end_of_inventory('inventory').
 
-read_position(_, X) :- end_of_inventory(X), !.
+% read_position(_, X) :- end_of_inventory(X), !.
 
-read_position(Stream, X):- 
-    \+end_of_inventory(X),  
-    read(Stream, Y),
-    asserta(position(X, Y)),
-    read(Stream, Z),
-    read_position(Stream, Z).
+% read_position(Stream, X):- 
+%     \+end_of_inventory(X),  
+%     read(Stream, Y),
+%     asserta(position(X, Y)),
+%     read(Stream, Z),
+%     read_position(Stream, Z).
 
-read_inventory(Stream, _) :- at_end_of_stream(Stream), !. 
+% read_inventory(Stream, _) :- at_end_of_stream(Stream), !. 
     
-read_inventory(Stream,[X|L]):- 
-    \+ at_end_of_stream(Stream), 
-    read(Stream,X),
-    asserta(inventory(X)), 
-    read_inventory(Stream,L).
+% read_inventory(Stream,[X|L]):- 
+%     \+ at_end_of_stream(Stream), 
+%     read(Stream,X),
+%     asserta(inventory(X)), 
+%     read_inventory(Stream,L).
 
 % if quit, make play to false and retract player position
 quit :-
@@ -210,43 +214,58 @@ take(_) :- play(X), X == false, !, write('You must start the game using "start."
 take(X) :- \+item(X), !, write('Item does not exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
 take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not sstore anything else!'), nl, fail.
-take(X) :- asserta(inventory(X)), write('You took the '), write(X), write('.'), nl, player(L), retract(position(X, L)), updateGame.
+take(NamaItem) :- 
+    (ammo(_,NamaItem) -> Qty is 5 ; Qty is 1) , addItem(NamaItem,Qty),
+    write('You took the '), write(NamaItem), write('.'), nl, player(L), retract(position(NamaItem, L)), updateGame.
+
+haventhave(NamaItem) :-
+    \+ inventory(NamaItem,_).
+
+addItem(NamaItem,Qty) :-
+    haventhave(NamaItem) -> (asserta(inventory(NamaItem,Qty))) ;
+    (inventory(NamaItem,JmlAwal), retract(inventory(NamaItem,JmlAwal)), JmlAkhir is JmlAwal+Qty, asserta(inventory(NamaItem,JmlAkhir))).
 
 nearby(X) :- position(X, Lt), player(Lt).
 
 countInven(Count) :-
-    findall(X, (inventory(X), X \== none), L),
+    findall(X, (inventory(X,_), X \== none), L),
     length(L,Count).
 
 use(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-use(X) :- \+inventory(X), !, write('Item doesnt exist in inventory.'), fail.
+use(X) :- \+inventory(X,_), !, write('Item doesnt exist in inventory.'), fail.
 % untuk ammo
-use(X) :- currweapon(Z, A), ammo(Z, X), !, retract(inventory(X)), retract(currweapon(Z, A)), asserta(currweapon(Z, A + 5)), write('% ammo has been added.'), nl, updateGame.
+use(X) :-
+    ammo(JenisWeapon, X),
+    (( currweapon(JenisWeapon,JlhAmmo)) -> (inventory(X,Jml), JlhAmmoNew is JlhAmmo + Jml, retract(currweapon(JenisWeapon,JlhAmmo)), asserta(currweapon(JenisWeapon,JlhAmmoNew)), retract(inventory(X,Jml)), !, write('Ammo has been added.') ) ; 
+    (!, write('You are not equipping weapon or the ammo is not suitable for your weapon type.')) ), nl, updateGame.
+
 % untuk armor
-use(X) :- variasiArmor(X), !, retract(inventory(X)), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), write('Your armor has been fortified.'), nl.
+use(X) :- variasiArmor(X), !, reduceItem(X), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), write('Your armor has been fortified.'), nl.
 % untuk weapon
-use(X) :- weapon(X), !, retract(inventory(X)), asserta(currweapon(X, 0)), write(X), write(' is equipped, but it is empty.'), nl, updateGame.
+use(X) :- weapon(X), !, reduceItem(X), asserta(currweapon(X, 0)), write(X), write(' is equipped!'), nl, updateGame.
 % untuk medicine
-use(X) :- medicine(X), !, retract(inventory(X)), addHealth(X).
+use(X) :- medicine(X), !, reduceItem(X), addHealth(X).
+
+reduceItem(X) :-
+    inventory(X,Jml), retract(inventory(X,Jml)),
+    ((Jml > 1) -> JmlBaru is Jml-1, asserta(inventory(X,JmlBaru)) ; true).
 
 addHealth(X) :-
     X=='batu1', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+10,
-    ((UpHealth > 100, asserta(health(CurHealth)));asserta(health(CurHealth))).
+    ((UpHealth > 100) -> asserta(health(100));asserta(health(UpHealth))).
 
 addHealth(X) :-
     X=='batu2', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+20,
-    ((UpHealth > 100, asserta(health(CurHealth)));asserta(health(CurHealth))).
+    ((UpHealth > 100) -> asserta(health(100));asserta(health(UpHealth))).
 
 % status command
 status :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 status :-
     health(X), !, write('Health : '), write(X), nl,
     armor(Y), !, write('Armor : '),  write(Y), nl,
-    currweapon(Z, _), !, write('Weapon : '), write(Z), nl,
-    ((\+ inventory(_), !, write('Inventory kosong!')) ;
-    (findall(Something,inventory(Something),L), write('Inventory: '), write(L))), nl.
-    % inventory(A), !, write('Inventory : '), nl, write('  '), write(A), nl,
-    % forall((inventory(B), B \== A, B \== none), (write('  '), write(B), nl)), nl. 
+    (currweapon(NamaWeapon,JmlAmmo) -> (format('Weapon: ~w; Ammo: ~w',[NamaWeapon, JmlAmmo]), nl) ; (write('No weapon equipped!'), nl)),
+    ((\+ inventory(_,_), !, write('Inventory kosong!')) ;
+    (findall([Something,Jml],inventory(Something,Jml),L), write('Inventory: '), write(L))), nl.
 
 % help (Final)
 help :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
@@ -275,9 +294,13 @@ printPrio(_,_) :- write('-').
 
 % Drop Item
 drop(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
-drop(X) :- \+inventory(X), !, write('Item does not exist in inventory.'), fail.
-drop(X) :- \+inventory(X), currweapon(X, _), !, write('You have to put your weapon in your inventory to drop it.'), fail.
-drop(X) :- retract(inventory(X)), player(L), asserta(position(X,L)), updateGame.
+drop(X) :- \+inventory(X,_), !, write('Item does not exist in inventory.'), fail.
+drop(X) :- weapon(X), currweapon(X, _), !, write('You have to unequip your weapon in your inventory to drop it.'), fail.
+drop(X) :- reduceItem(X), player(L), asserta(position(X,L)), updateGame.
+
+unequip :-
+    currweapon(NamaWeapon,Pelor) -> (retract(currweapon(NamaWeapon,Pelor)), ammo(NamaWeapon,NamaPelor), addItem(NamaPelor,Pelor), addItem(NamaWeapon,1), format('~w is now in your inventory and its corresponding ammo is back on your inventory.',[NamaWeapon]));
+    format('Are you sure you are equiping any weapon?~N',[]).
 
 % Check deadzone
 isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Block); Y < Block; Y >= (17-Block))),!.
@@ -286,17 +309,25 @@ isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Bl
 addTime :- retract(waktu(X)), Y is X + 1, asserta(waktu(Y)).
 
 % Update Game (including add time)
-updateGame :- addTime, cleanObjects, winLose, win(W), lose(L), (W \== true, L \== true) -> upGame.
-upGame :- moveEnemy, periodicDrop.
+updateGame :- addTime, cleanObjects, moveEnemy, attacked, winLose, win(W), lose(L), (W \== true, L \== true) -> upGame.
+upGame :-periodicDrop.
 
 % clean objects untuk benda-benda yang sudah berada di dead zone.
 cleanObjects :- forall((position(Z,[X,Y]), isDeadZone(X,Y)), (retract(position(Z,[X,Y])))).
+
+% getattacked
+attacked :-
+    player(Lplayer) , forall((position(X,Lplayer), enemy(X)), (reduceHealth(-20), write('You got attacked! HP -20!'))), nl.
+attacked.
+
+reduceHealth(Qty) :-
+    health(CurHealth), retract(health(CurHealth)), NewHealth is CurHealth+Qty, asserta(health(NewHealth)).
 
 % check if the player has won or lost
 winLose :-
     \+ (enemy(X), position(X,[_,_])), retract(win(false)), asserta(win(true)), printWinFalse, quit.
 winLose :-
-    player([X,Y]), isDeadZone(X,Y), retract(lose(false)), asserta(lose(true)), printWinFalse, quit.
+    ((player([X,Y]), isDeadZone(X,Y)) ; (health(Hp), (Hp < 1))), retract(lose(false)), asserta(lose(true)), printWinFalse, quit.
 winLose.
 
 printWinFalse :-
@@ -305,16 +336,16 @@ printWinFalse :-
 
 % realisasi fungsi attack
 attack :-
-    player(LPosition), \+ position(Z,LPosition), enemy(Z), write('Tidak ada enemy!'), nl.
+    player(LPosition), \+ position(Z,LPosition), enemy(Z), !, write('Tidak ada enemy!'), nl.
 attack :-
-    weapon(none), write('You have no weapon!').
+    \+ currweapon(_,_), !, write('You have no weapon!').
 attack :-
-    currweapon(_, X), X == 0, write('You have no ammo!').
+    currweapon(_, X), X == 0, !, write('You have no ammo!').
 attack :- 
-    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), write('Enemy killed!'), reduceAmmo, nl.
+    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), !, write('Enemy killed!'), reduceAmmo, nl.
 
 reduceAmmo :-
-    currweapon(_, X), Y is X-1, retract(ammo(X)), asserta(ammo(Y)).
+    currweapon(NamaWeapon, X), Y is X-1, retract(currweapon(NamaWeapon, X)), asserta(currweapon(NamaWeapon, Y)).
 
 % periodicDrop :- 
 periodicDrop :-
@@ -327,15 +358,16 @@ periodicDrop :-
     forall((random(1, 1, N), between(1, N, _)), forall(medicine(Z), (X1 is 0 + Block, Y1 is 17 - Block, random(X1, Y1, A), random(X1, Y1, B), asserta(position(Z, [A, B]) ) ) ) ),
 
     write('Supply drop has arrived, go hunting!'),nl.
+periodicDrop.
 
 % move enemy toward player
 moveEnemy :- forall((position(Z,[X,Y]), enemy(Z)), (retract(position(Z,[X,Y])), random(1,4,N), movePosition(Z,X,Y,N)) ).
 
 movePosition(Z,X,Y,N) :-
-    ((N==1),(asserta(position(Z,[X+1,Y]))));
-    ((N==2),(asserta(position(Z,[X-1,Y]))));
-    ((N==3),(asserta(position(Z,[X,Y+1]))));
-    ((N==4),(asserta(position(Z,[X,Y-1])))).
+    ((N==1), K is X+1, (asserta(position(Z,[K,Y]))));
+    ((N==2), K is X-1, (asserta(position(Z,[K,Y]))));
+    ((N==3), K is Y+1, (asserta(position(Z,[X,K]))));
+    ((N==4), K is Y-1, (asserta(position(Z,[X,K])))).
 
 printHeader :-
     write(',d88~~\\                         d8                 d8              e                 d8           ,88~-_      88~\\    88~\\   888   ,e,                        '), nl,
