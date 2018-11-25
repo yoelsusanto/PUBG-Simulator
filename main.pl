@@ -95,13 +95,32 @@ start :-
 
     % current weapon is none
     % currweapon(nama_weapon, jml peluru untuk weapon itu)
-    
+    % asserta(inventory('bola_naga',1)),
     % set play to default false
     asserta(win(false)),
     asserta(lose(false)),
 
     % print required texts
     printHeader,printHelp.
+cleanNoneInv :-
+    retract(inventory(none,0)).
+cleanNoneInv.
+
+cleanNoneCurr :-
+    retract(currweapon(none,0)).
+cleanNoneCurr.
+
+cleanNone :- cleanNoneInv, cleanNoneCurr.
+
+saveInven :-
+    \+ inventory(_,_) , asserta(inventory(none,0)).
+saveInven.
+
+saveCurWep :-
+    \+ currweapon(_,_) , asserta(currweapon(none,0)).
+saveCurWep.
+
+savee(S) :- saveInven, saveCurWep, save(S),!.
 
 save(_) :- play(X), X == false, !, write('Mulai main game dulu pake "start." ya.'), fail.
 
@@ -259,11 +278,11 @@ use(X) :-
     nl, !, updateGame.
 
 addHealth(X) :-
-    X=='batu1', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+10,
+    X=='kitab_suci', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+10,
     ((UpHealth > 100) -> asserta(health(100));asserta(health(UpHealth))).
 
 addHealth(X) :-
-    X=='batu2', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+20,
+    X=='bola_naga', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+20,
     ((UpHealth > 100) -> asserta(health(100));asserta(health(UpHealth))).
 
 % status command
@@ -308,8 +327,7 @@ drop(X) :- weapon(X), currweapon(X, _), !, write('Hei! Alat ilmu hitam yang mau 
 drop(X) :- reduceItem(X), player(L), asserta(position(X,L)), write('Kamu telah menjatuhkan '), write(X), updateGame.
 
 reduceItem(X) :-
-    inventory(X,Jml), retract(inventory(X,Jml)),
-    ((Jml > 1) -> JmlBaru is Jml-1, asserta(inventory(X,JmlBaru)) ; true).
+    inventory(X,Jml), retract(inventory(X,Jml)), ((Jml > 1) -> (JmlBaru is Jml-1, asserta(inventory(X,JmlBaru))) ; true).
     
 unequip :-
     (currweapon(NamaWeapon,Pelor),
