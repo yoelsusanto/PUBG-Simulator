@@ -83,15 +83,7 @@ start :-
     asserta(play(true)),
 
     % testing
-    asserta(currweapon('mini-14',0)),
-    asserta(inventory('5,56-mm',5)),
-    asserta(inventory('7,62-mm',5)),
-
-    
-    % set inventory to no item (no inventory() facts)
-    % asserta(inventory(none)),
-    % asserta(inventory(neone)),
-    % asserta(inventory(neeone)),
+    asserta(currweapon('mini-14',5)),
 
     % set waktu to zero
     asserta(waktu(0)),
@@ -322,8 +314,12 @@ reduceItem(X) :-
     ((Jml > 1) -> JmlBaru is Jml-1, asserta(inventory(X,JmlBaru)) ; true).
 
 unequip :-
-    currweapon(NamaWeapon,Pelor) -> (retract(currweapon(NamaWeapon,Pelor)), ammo(NamaWeapon,NamaPelor), addItem(NamaPelor,Pelor), addItem(NamaWeapon,1), format('~w is now in your inventory and its corresponding ammo is back on your inventory.',[NamaWeapon]));
-    format('Are you sure you are equiping any weapon?~N',[]).
+    (currweapon(NamaWeapon,Pelor), 
+    ( (maxInventory(Max), countInven(Qty), Slsh is Max-Qty, Slsh >=2) ;
+    ( maxInventory(Max), countInven(Qty), Slsh is Max-Qty, Slsh >=1, (inventory(NamaWeapon,_); inventory(Pelor,_) ) ) ;
+    ( maxInventory(Max), countInven(Qty), Slsh is Max-Qty, Slsh == 0, inventory(NamaWeapon,_), inventory(Pelor,_) )  )           )->
+    (retract(currweapon(NamaWeapon,Pelor)), ammo(NamaWeapon,NamaPelor), addItem(NamaPelor,Pelor), addItem(NamaWeapon,1), format('~w is now in your inventory and its corresponding ammo is back on your inventory.',[NamaWeapon]));
+    format('Unequip gagal!~N',[]).
 
 % Check Deadzone
 isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Block); Y < Block; Y >= (17-Block))),!.
