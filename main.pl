@@ -197,17 +197,17 @@ w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])
 
 % Dipanggil pada saat ada perintah move
 areaAround :-
-    player([X, Y]), N is X + 1, S is X - 1, E is Y + 1, W is Y - 1,
+    player([X, Y]), N is Y - 1, S is Y + 1, E is X + 1, W is X - 1,
     (location(Xmin, Ymin, Xmax, Ymax, LocationName),
     (Xmin =< X, X =< Xmax, Ymin =< Y, Y =< Ymax, !, write('You are in '), write(LocationName), write('. '))),
-    (location(XminN, YminN, XmaxN, YmaxN, LocationNName),
-    (XminN =< N, N =< XmaxN, YminN =< Y, Y =< YmaxN, !, write('To the north is '), write(LocationNName), write('. '))),
-    (location(XminE, YminE, XmaxE, YmaxE, LocationEName),
-    (XminE =< X, X =< XmaxE, YminE =< E, E =< YmaxE, !, write('To the east is '), write(LocationEName), write('. '))),
-    (location(XminS, YminS, XmaxS, YmaxS, LocationSName),
-    (XminS =< S, S =< XmaxS, YminS =< Y, Y =< YmaxS, !, write('To the south is '), write(LocationSName), write('. '))),
-    (location(XminW, YminW, XmaxW, YmaxW, LocationWName),
-    (XminW =< X, X =< XmaxW, YminW =< W, W =< YmaxW, !, write('To the west is '), write(LocationWName), write('.'))), nl.
+    ((isDeadZone(X, N)) -> (write('To the north is a Deadzone! ')); (location(XminN, YminN, XmaxN, YmaxN, LocationNName),
+    (XminN =< X, X =< XmaxN, YminN =< N, N =< YmaxN, !, write('To the north is '), write(LocationNName), write('. ')))),
+    ((isDeadZone(E, Y)) -> (write('To the east is a Deadzone! ')); (location(XminE, YminE, XmaxE, YmaxE, LocationEName),
+    (XminE =< E, E =< XmaxE, YminE =< Y, Y =< YmaxE, !, write('To the east is '), write(LocationEName), write('. ')))),
+    ((isDeadZone(X, S)) -> (write('To the south is a Deadzone! ')); (location(XminS, YminS, XmaxS, YmaxS, LocationSName),
+    (XminS =< X, X =< XmaxS, YminS =< S, S =< YmaxS, !, write('To the south is '), write(LocationSName), write('. ')))),
+    ((isDeadZone(W, Y)) -> (write('To the west is a Deadzone! ')); (location(XminW, YminW, XmaxW, YmaxW, LocationWName),
+    (XminW =< W, W =< XmaxW, YminW =< Y, Y =< YmaxW, !, write('To the west is '), write(LocationWName), write('.')))), nl.
 
 item(X) :- weapon(X), !.
 item(X) :- variasiArmor(X), !.
@@ -246,7 +246,7 @@ use(X) :-
 % untuk armor
 use(X) :- variasiArmor(X), !, reduceItem(X), retract(armor(Y)), Yn is Y + 20, asserta(armor(Yn)), write('Your armor has been fortified.'), nl.
 % untuk weapon
-use(X) :- weapon(X), !, reduceItem(X), asserta(currweapon(X, 0)), write(X), write(' is equipped!'), nl, updateGame.
+use(X) :- weapon(X), !, reduceItem(X), retract(currweapon(W, Qty)), ammo(W, A), addItem(W, 1), addItem(A, Qty), asserta(currweapon(X, 0)), write(X), write(' is equipped!'), nl, updateGame.
 % untuk medicine
 use(X) :- medicine(X), !, reduceItem(X), addHealth(X).
 
