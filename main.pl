@@ -340,8 +340,8 @@ attacked.
 
 reduceHealth(Qty) :-
     armor(QArmor),
-    (QArmor >= Qty) -> (write('suk1'),(Sisa is QArmor - Qty), retract(armor(QArmor)), asserta(armor(Sisa)));
-    (write('suk2'),Sisa is Qty - QArmor, retract(armor(QArmor)), asserta(armor(0)),
+    (QArmor >= Qty) -> (Sisa is QArmor - Qty, retract(armor(QArmor)), asserta(armor(Sisa)));
+    (armor(QArmor), Sisa is Qty - QArmor, retract(armor(QArmor)), asserta(armor(0)),
     health(CurHealth), retract(health(CurHealth)), NewHealth is CurHealth - Sisa, asserta(health(NewHealth))).
 
 % check if the player has won or lost
