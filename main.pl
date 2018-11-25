@@ -219,7 +219,7 @@ take(X) :- \+item(X), !, write('Item does not exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
 take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not sstore anything else!'), nl, fail.
 take(NamaItem) :- 
-    (ammo(_,NamaItem) -> Qty is 5 ; Qty is 1) , addItem(NamaItem,Qty), !,
+    (ammo(_,NamaItem) -> Qty is 1 ; Qty is 1) , addItem(NamaItem,Qty), !,
     write('You took the '), write(NamaItem), write('.'), nl, player(L), retract(position(NamaItem, L)), updateGame.
 
 haventhave(NamaItem) :-
@@ -306,7 +306,7 @@ unequip :-
     currweapon(NamaWeapon,Pelor) -> (retract(currweapon(NamaWeapon,Pelor)), ammo(NamaWeapon,NamaPelor), addItem(NamaPelor,Pelor), addItem(NamaWeapon,1), format('~w is now in your inventory and its corresponding ammo is back on your inventory.',[NamaWeapon]));
     format('Are you sure you are equiping any weapon?~N',[]).
 
-% Check deadzone
+% Check Deadzone
 isDeadZone(X,Y) :- waktu(Waktu), Block is (Waktu//3)+1, ((X < Block; X >= (17-Block); Y < Block; Y >= (17-Block))),!.
 
 % Add time
@@ -346,10 +346,27 @@ attack :-
 attack :-
     currweapon(_, X), X == 0, !, write('You have no ammo!').
 attack :- 
-    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), !, write('Enemy killed!'), reduceAmmo, nl.
+    player(LPosition), position(Z,LPosition), enemy(Z), retract(position(Z,LPosition)), !, write('Enemy killed!'), nl, reduceAmmo, random(1,3,Pil), enemyDieDrop(Pil), nl.
 
 reduceAmmo :-
     currweapon(NamaWeapon, X), Y is X-1, retract(currweapon(NamaWeapon, X)), asserta(currweapon(NamaWeapon, Y)).
+
+% enemyDieDrop
+enemyDieDrop(Pil) :-
+    (Pil==1) ->
+
+    % randomly place weapon
+    (findall(Wep, weapon(Wep), ListWeapon), random_member(Each,ListWeapon), player(LPos), asserta(position(Each, LPos)), format('Enemy dropped ~w',[Each]));
+
+    % randomly place medicine
+    (findall(Med, medicine(Med), ListMed), random_member(Each,ListMed), player(LPos), asserta(position(Each, LPos)), format('Enemy dropped ~w',[Each])).
+
+% random member
+random_member(X, List) :-
+    length(List, Len),
+    Len > 0,
+    random(0, Len, N),
+    nth0(N, List, X).
 
 % periodicDrop :- 
 periodicDrop :-
