@@ -62,7 +62,7 @@ start :-
     forall((random(2, 5, N), between(1, N, _)), forall(weapon(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
     % randomly place enemy
-    forall((random(24, 25, N), between(1, N, _)), forall(enemy(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    forall((random(5, 9, N), between(1, N, _)), forall(enemy(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
 
     % randomly place medicine
     forall((random(2, 5, N), between(1, N, _)), forall(medicine(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
@@ -74,7 +74,7 @@ start :-
     forall((random(2, 5, N), between(1, N, _)), forall(ammo(_, Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
     % randomly place bag
-    forall((random(24, 25, N), between(1, N, _)), forall(bag(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    forall((random(2, 5, N), between(1, N, _)), forall(bag(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
     % set max inventory
     asserta(maxInventory(10)),
@@ -95,7 +95,6 @@ start :-
 
     % current weapon is none
     % currweapon(nama_weapon, jml peluru untuk weapon itu)
-    asserta(currweapon(none, 0)),
     
     % set play to default false
     asserta(win(false)),
@@ -182,19 +181,19 @@ printMap(X,Y,DeadZone) :-
 % move player position (Final)
 n :- play(X), X == false, !, write('Mulai main game dulu pake "start." ya.'), fail.
 n :- player([X, Y]), Yn is Y - 1, isDeadZone(X,Yn), write('Hei, kau gila ya ingin ke tempat yang sudah dipenuhi kegelapan!'),!.
-n :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), write('oke'), areaAround, write('oke1'), updateGame, write('oke2'), !.
+n :- player([X, Y]), Yn is Y - 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, updateGame, !.
 
 s :- play(X), X == false, !, write('Mulai main game dulu pake "start." ya.'), fail.
 s :- player([X, Y]), Yn is Y + 1, isDeadZone(X,Yn), write('Hei, kau gila ya ingin ke tempat yang sudah dipenuhi kegelapan!'),!.
-s :- player([X, Y]), Yn is Y + 1, retractall(player(_)), asserta(player([X, Yn])), write('oke'), areaAround, write('oke1'), updateGame, write('oke2'), !.
+s :- player([X, Y]), Yn is Y + 1, retractall(player(_)), asserta(player([X, Yn])), areaAround, updateGame, !.
 
 e :- play(X), X == false, !, write('Mulai main game dulu pake "start." ya.'), fail.
 e :- player([X, Y]), Xn is X + 1, isDeadZone(Xn,Y), write('Hei, kau gila ya ingin ke tempat yang sudah dipenuhi kegelapan!'),!.
-e :- player([X, Y]), Xn is X + 1, retractall(player(_)), asserta(player([Xn, Y])), write('oke'), areaAround, write('oke1'), updateGame, write('oke2'), !.
+e :- player([X, Y]), Xn is X + 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, updateGame, !.
 
 w :- play(X), X == false, !, write('Mulai main game dulu pake "start." ya.'), fail.
 w :- player([X, Y]), Xn is X - 1, isDeadZone(Xn,Y), write('Hei, kau gila ya ingin ke tempat yang sudah dipenuhi kegelapan!'),!.
-w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])), write('oke'), areaAround, write('oke1'), updateGame, write('oke2'), !.
+w :- player([X, Y]), Xn is X - 1, retractall(player(_)), asserta(player([Xn, Y])), areaAround, updateGame, !.
 
 % Dipanggil pada saat ada perintah move
 areaAround :-
@@ -340,8 +339,8 @@ attacked.
 
 reduceHealth(Qty) :-
     armor(QArmor),
-    (QArmor >= Qty) -> (write('suk1'),(Sisa is QArmor - Qty), retract(armor(QArmor)), asserta(armor(Sisa)));
-    (write('suk2'),Sisa is Qty - QArmor, retract(armor(QArmor)), asserta(armor(0)),
+    (QArmor >= Qty) -> ((Sisa is QArmor - Qty), retract(armor(QArmor)), asserta(armor(Sisa)));
+    (armor(QArmor), Sisa is Qty - QArmor, retract(armor(QArmor)), asserta(armor(0)),
     health(CurHealth), retract(health(CurHealth)), NewHealth is CurHealth - Sisa, asserta(health(NewHealth))).
 
 % check if the player has won or lost
