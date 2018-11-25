@@ -10,6 +10,7 @@
 :- dynamic(play/1).        % is playing predicate
 :- dynamic(lose/1).
 :- dynamic(win/1).
+:- dynamic(curBag/1).
 % ---------------- Item Variations ---------------- %
 % weapon variations
 weapon('sumpitan').
@@ -34,6 +35,10 @@ ammo('sumpitan', 'anak_sumpit').
 ammo('mini-14', '5,56-mm').
 ammo('scar-l', '5,56-mm').
 ammo('akm', '7,62-mm').
+
+% bag
+bag(mediumBag).
+bag(largeBag).
 
 % set locations area
 location(10, 1, 15, 6, 'the desert').
@@ -66,8 +71,12 @@ start :-
     % randomly place ammo
     forall((random(2, 5, N), between(1, N, _)), forall(ammo(_, Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
     
+    % randomly place bag
+    forall((random(24, 25, N), between(1, N, _)), forall(bag(Z), (random(1, 16, A), random(1, 16, B), asserta(position(Z, [A, B]) ) ) ) ),
+    
     % set max inventory
     asserta(maxInventory(10)),
+    asserta(curBag(smallBag)),
 
     % erase play from false to true
     retract(play(false)),
@@ -78,6 +87,7 @@ start :-
     asserta(inventory('5,56-mm',5)),
     asserta(inventory('7,62-mm',5)),
 
+    
     % set inventory to no item (no inventory() facts)
     % asserta(inventory(none)),
     % asserta(inventory(neone)),
@@ -213,14 +223,15 @@ item(X) :- weapon(X), !.
 item(X) :- variasiArmor(X), !.
 item(X) :- medicine(X), !.
 item(X) :- ammo(_, X), !.
+item(X) :- bag(X), !.
 
 take(_) :- play(X), X == false, !, write('You must start the game using "start." first.'), fail.
 take(X) :- \+item(X), !, write('Item does not exist.'), fail.
 take(X) :- \+nearby(X), !, write('There is no '), write(X), write(' around here.'), fail.
-take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not sstore anything else!'), nl, fail.
+take(_) :- countInven(Quantity), maxInventory(Max), Quantity == Max, !, write('Inventory is full! You can not store anything else!'), nl, fail.
 take(NamaItem) :- 
-    (ammo(_,NamaItem) -> Qty is 1 ; Qty is 1) , addItem(NamaItem,Qty), !,
-    write('You took the '), write(NamaItem), write('.'), nl, player(L), retract(position(NamaItem, L)), updateGame.
+    addItem(NamaItem,1),
+    write('You took the '), write(NamaItem), write('.'), nl, player(L), retract(position(NamaItem, L)), !, updateGame.
 
 haventhave(NamaItem) :-
     \+ inventory(NamaItem,_).
@@ -249,6 +260,13 @@ use(X) :- variasiArmor(X), reduceItem(X), retract(armor(Y)), Yn is Y + 20, asser
 use(X) :- weapon(X), !, reduceItem(X), retract(currweapon(W, Qty)), ammo(W, A), addItem(W, 1), addItem(A, Qty), asserta(currweapon(X, 0)), write(X), write(' is equipped!'), nl, updateGame.
 % untuk medicine
 use(X) :- medicine(X), reduceItem(X), addHealth(X), !, write('Health is added!'), nl, updateGame.
+% untuk bag
+use(X) :- 
+    bag(X), 
+    (((curBag(smallBag), X=='mediumBag')) -> (format('Your inventory capacity has increased to 15',[]), asserta(curBag(mediumBag)), retractall(maxInventory(_)), asserta(maxInventory(15)), retract(curBag(smallBag))) ;
+    (((curBag(smallBag) ; curBag(mediumBag)), X=='largeBag') -> (format('Your inventory capacity has increased to 20',[]), asserta(curBag(largeBag)), retractall(maxInventory(_)), asserta(maxInventory(20)), (retract(curBag(smallBag));retract(curBag(mediumBag)))) ;
+    (write('Gagal memakai bag!')))),
+    nl, !, updateGame.
 
 addHealth(X) :-
     X=='batu1', health(CurHealth), retract(health(CurHealth)), UpHealth is CurHealth+10,
@@ -285,6 +303,7 @@ look :-
 
 printPrio(X,Y) :- isDeadZone(X,Y), !, write('X').
 printPrio(X,Y) :- position(Z, [X,Y]), enemy(Z), !, write('E').
+printPrio(X,Y) :- position(Z, [X,Y]), bag(Z), !, write('B').
 printPrio(X,Y) :- position(Z, [X,Y]), medicine(Z), !, write('M').
 printPrio(X,Y) :- position(Z, [X,Y]), weapon(Z), !, write('W').
 printPrio(X,Y) :- position(Z, [X,Y]), variasiArmor(Z), !, write('A').
